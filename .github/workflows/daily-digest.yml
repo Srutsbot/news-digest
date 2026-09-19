@@ -2,8 +2,8 @@ name: Daily news digest
 
 on:
   schedule:
-    # 06:30 UTC = 08:30 Amsterdam in summer (CEST), 07:30 in winter (CET)
-    - cron: "30 6 * * *"
+    - cron: "30 6 * * *"  # 08:30 Amsterdam in summer (07:30 in winter)
+    - cron: "0 12 * * *"  # 14:00 Amsterdam in summer (13:00 in winter)
   workflow_dispatch: # lets you trigger a run manually from the Actions tab
 
 jobs:
