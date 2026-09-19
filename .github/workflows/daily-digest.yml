@@ -1,0 +1,22 @@
+name: Daily news digest
+
+on:
+  schedule:
+    # 06:30 UTC = 08:30 Amsterdam in summer (CEST), 07:30 in winter (CET)
+    - cron: "30 6 * * *"
+  workflow_dispatch: # lets you trigger a run manually from the Actions tab
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install feedparser requests
+      - run: python digest.py
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
