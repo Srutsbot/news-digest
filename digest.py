@@ -4,6 +4,7 @@
 Usage:
     python digest.py             # fetch feeds and send the email
     python digest.py --dry-run   # fetch feeds and print the email, don't send
+    python digest.py --dry-run --debug   # same, plus a report on what was dropped and why
 
 Required environment variables (only when sending):
     SMTP_USER      e.g. your Gmail address
@@ -19,7 +20,7 @@ import re
 import smtplib
 import sys
 import unicodedata
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from email.message import EmailMessage
 from urllib.parse import urljoin, urlparse
 
@@ -40,13 +41,23 @@ FEEDS = {
     # "Follow the Money": no public RSS feed found on ftm.nl -- add a URL here if you find one
     # --- International ---
     "The Guardian (Europe)": ("https://www.theguardian.com/europe/rss", "Guardian News & Media"),
-    "The New Yorker": ("https://www.newyorker.com/feed/everything", "Condé Nast"),
     "The New York Times": ("https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", "The New York Times Company"),
     "The Wall Street Journal": ("https://feeds.a.dj.com/rss/RSSWorldNews.xml", "Dow Jones & Company"),
 }
 
+# Sources whose main feed URL has been unreliable: try these candidates in order, then fall back
+# to discovering a feed link on the homepage itself.
+FEED_FALLBACKS = {
+    "The Wall Street Journal": {
+        "homepage": "https://www.wsj.com/news/world",  # wsj.com blocks non-browser requests (401), so
+        "hints": [],                                   # discovery here won't help -- go straight to Google News
+        "google_query": "site:wsj.com", "google_lang": "en",
+    },
+}
+
 ARTICLES_PER_SOURCE = 3        # headlines shown per outlet
 CANDIDATES_PER_SOURCE = 15     # headlines per outlet that are scanned for big stories / trending words
+MAX_ARTICLE_AGE_DAYS = 5       # drop feed items older than this (catches stale/broken feeds); items with no date always pass
 MIN_SOURCES_FOR_ONMISBAAR = 4  # a story in at least 4 outlets goes in the ONMISBAAR box
 MIN_SOURCES_FOR_TERM = 3       # a word in the headlines of MORE than 2 outlets is "trending"
 MIN_SHARED_WORDS = 2           # two headlines are "the same story" if they share this many words
@@ -57,12 +68,19 @@ MAX_TERM_ARTICLES = 15         # safety cap on extra articles added because of t
 OPINION_COUNT = 3
 OPINION_CANDIDATES = 8                   # headlines read per opinion feed
 OPINION_SKIP_OUTLETS = {"De Telegraaf"}  # never show opinion from these outlets
-OPINION_FEEDS = {                        # dedicated opinion feeds (a bad URL only gives a warning)
-    "de Volkskrant": "https://www.volkskrant.nl/columns-opinie/rss.xml",
-    "The Guardian": "https://www.theguardian.com/commentisfree/rss",
-    "The New York Times": "https://rss.nytimes.com/services/xml/rss/nyt/Opinion.xml",
-    "The Wall Street Journal": "https://feeds.a.dj.com/rss/RSSOpinion.xml",
+OPINION_FEEDS = {  # outlet -> {homepage, hints, google_query (fallback), google_lang}
+    "de Volkskrant": {"homepage": "https://www.volkskrant.nl/columns/", "hints": [],
+                       "google_query": "site:volkskrant.nl inurl:columns-opinie", "google_lang": "nl"},
+    "The Guardian": {"homepage": "https://www.theguardian.com/commentisfree",
+                      "hints": ["https://www.theguardian.com/commentisfree/rss"]},
+    "The New York Times": {"homepage": "https://www.nytimes.com/section/opinion",
+                            "hints": ["https://rss.nytimes.com/services/xml/rss/nyt/Opinion.xml"],
+                            "google_query": "site:nytimes.com/opinion", "google_lang": "en"},
+    "The Wall Street Journal": {"homepage": "https://www.wsj.com/news/opinion", "hints": [],
+                                 "google_query": "site:wsj.com/opinion", "google_lang": "en"},
 }
+COMMON_FEED_PATHS = ("feed/", "rss", "rss.xml", "feed", "atom.xml")
+FEED_TAG_RE = re.compile(r'<link\b[^>]*?type="application/(?:rss|atom)\+xml"[^>]*>', re.I)
 # Articles from the normal feeds whose URL has one of these sections are also treated as opinion
 OPINION_URL_SEGMENTS = {"opinie", "opinion", "opinions", "commentisfree", "columns-opinie", "columns", "column"}
 SNIPPET_CHARS = 150       # FD's feed terms allow at most ~150 chars of article text
@@ -154,7 +172,8 @@ def fetch_articles(name: str, url: str) -> list[dict]:
         print(f"[warn] {name}: feed contained no entries", file=sys.stderr)
         return []
 
-    articles, seen = [], set()
+    cutoff = datetime.now(timezone.utc) - timedelta(days=MAX_ARTICLE_AGE_DAYS)
+    articles, seen, stale = [], set(), 0
     # Feeds are ordered by the outlet itself (front page / latest first),
     # so the first N entries are our proxy for "most prominent".
     for entry in feed.entries:
@@ -164,12 +183,21 @@ def fetch_articles(name: str, url: str) -> list[dict]:
             continue
         if any(part in link for part in SKIP_LINK_PARTS):
             continue
+        stamp = entry.get("published_parsed") or entry.get("updated_parsed")
+        if stamp:
+            published = datetime(*stamp[:6], tzinfo=timezone.utc)
+            if published < cutoff:
+                stale += 1
+                continue
         seen.add(link)
         snippet = truncate(clean(entry.get("summary", "")), SNIPPET_CHARS)
         categories = [t.get("term", "") for t in (entry.get("tags") or []) if t.get("term")]
         articles.append({"title": title, "link": link, "snippet": snippet, "categories": categories})
         if len(articles) >= CANDIDATES_PER_SOURCE:
             break
+    if not articles and stale:
+        print(f"[warn] {name}: feed only had entries older than {MAX_ARTICLE_AGE_DAYS} days "
+              f"({stale} skipped) -- the feed URL may be stale or broken", file=sys.stderr)
     return articles
 
 
@@ -268,16 +296,71 @@ def _sport_or_gossip_section(segment: str) -> bool:
     return len(parts) <= 3 and any(part in EXCLUDE_URL_SEGMENTS for part in parts)
 
 
-def is_excluded(article: dict) -> bool:
-    """True for sport and gossip: URL sections, feed categories, and words in title/summary."""
-    segments = [seg for seg in urlparse(article["link"]).path.lower().split("/") if seg]
-    if any(_sport_or_gossip_section(seg) for seg in segments):
-        return True
+def exclusion_reason(article: dict) -> str | None:
+    """Why an article counts as sport/gossip (URL section, feed category, or word), else None."""
+    for seg in (s for s in urlparse(article["link"]).path.lower().split("/") if s):
+        if _sport_or_gossip_section(seg):
+            return f"url section: {seg[:40]}"
     for category in article.get("categories", []):
-        category = category.lower().strip()
-        if category in EXCLUDE_URL_SEGMENTS or EXCLUDE_RE.search(category):
-            return True
-    return bool(EXCLUDE_RE.search(f"{article['title']} {article.get('snippet', '')}"))
+        cat = category.lower().strip()
+        if cat in EXCLUDE_URL_SEGMENTS or EXCLUDE_RE.search(cat):
+            return f"feed category: {category}"
+    match = EXCLUDE_RE.search(f"{article['title']} {article.get('snippet', '')}")
+    return f"word: {match.group(0)}" if match else None
+
+
+def is_excluded(article: dict) -> bool:
+    return exclusion_reason(article) is not None
+
+
+def discover_feed_urls(homepage: str):
+    """Feed URLs advertised in a page's <link> tags, then a few common paths as a fallback."""
+    try:
+        resp = requests.get(homepage, headers=HEADERS, timeout=20)
+        resp.raise_for_status()
+        for tag in FEED_TAG_RE.findall(resp.text):
+            match = re.search(r'href="([^"]+)"', tag)
+            if match:
+                url = urljoin(homepage, html.unescape(match.group(1)))
+                if "comment" not in url.lower():  # skip a WordPress "comments" feed
+                    yield url
+    except requests.RequestException:
+        pass
+    for path in COMMON_FEED_PATHS:
+        yield urljoin(homepage, path)
+
+
+def google_news_feed(query: str, lang: str = "en", country: str = "US") -> str:
+    """A Google News RSS search feed for `query` (e.g. 'site:wsj.com'). No official feed needed."""
+    from urllib.parse import quote
+    ceid = f"{country}:{lang}"
+    return f"https://news.google.com/rss/search?q={quote(query)}&hl={lang}-{country}&gl={country}&ceid={ceid}"
+
+
+def fetch_with_discovery(
+    name: str, homepage: str, hints: list[str], google_query: str | None = None, google_lang: str = "en"
+) -> list[dict]:
+    """Try the known feed URLs, then discover one from the homepage, then Google News as a last resort.
+
+    Google News RSS is used only when nothing else works: it is reliably live (unlike some outlets'
+    own feeds), but links go through a Google redirect to the real article rather than pointing at it
+    directly, so it is a fallback rather than a first choice.
+    """
+    tried = set()
+    for url in hints + list(discover_feed_urls(homepage)):
+        if url in tried:
+            continue
+        tried.add(url)
+        articles = fetch_articles(name, url)
+        if articles:
+            return articles
+    if google_query:
+        articles = fetch_articles(name, google_news_feed(google_query, google_lang))
+        if articles:
+            print(f"[info] {name}: using Google News as a fallback (no working feed found directly)", file=sys.stderr)
+            return articles
+    print(f"[warn] {name}: no working feed found via known URL(s), discovery, or Google News", file=sys.stderr)
+    return []
 
 
 def is_opinion(article: dict) -> bool:
@@ -293,7 +376,11 @@ def tokens(title: str) -> set[str]:
     return {w for w in words if len(w) >= 4 and not w.isdigit() and w not in STOPWORDS}
 
 
-def find_onmisbaar(candidates: dict[str, list[dict]]) -> list[dict]:
+def find_onmisbaar(
+    candidates: dict[str, list[dict]],
+    min_sources: int = MIN_SOURCES_FOR_ONMISBAAR,
+    max_clusters: int = MAX_ONMISBAAR,
+) -> list[dict]:
     """Stories that appear in at least MIN_SOURCES_FOR_ONMISBAAR different outlets.
 
     Two headlines count as the same story when they share MIN_SHARED_WORDS meaningful words.
@@ -305,7 +392,7 @@ def find_onmisbaar(candidates: dict[str, list[dict]]) -> list[dict]:
     used: set[int] = set()
     clusters: list[dict] = []
 
-    while len(clusters) < MAX_ONMISBAAR:
+    while len(clusters) < max_clusters:
         best = None
         for seed in pool:
             if id(seed) in used:
@@ -317,7 +404,7 @@ def find_onmisbaar(candidates: dict[str, list[dict]]) -> list[dict]:
                 shared = len(seed["tok"] & other["tok"])
                 if shared >= MIN_SHARED_WORDS and shared > members.get(other["source"], (None, 0))[1]:
                     members[other["source"]] = (other, shared)
-            if len(members) >= MIN_SOURCES_FOR_ONMISBAAR and (best is None or len(members) > len(best)):
+            if len(members) >= min_sources and (best is None or len(members) > len(best)):
                 best = [article for article, _ in members.values()]
         if best is None:
             break
@@ -536,25 +623,71 @@ def send_email(subject: str, text: str, html_body: str) -> None:
         server.send_message(msg)
 
 
+def print_debug(fetched, dropped, candidates, opinion_moved) -> None:
+    """--debug: show what was fetched, what was thrown away and why, and the biggest story groups."""
+    def say(msg: str) -> None:
+        print(f"[debug] {msg}", file=sys.stderr)
+
+    say("=== per outlet: fetched -> left after filters ===")
+    for name in fetched:
+        say(f"{name}: {len(fetched[name])} fetched -> {len(candidates[name])} left")
+    say("=== dropped as sport/gossip ===")
+    for name, title, reason in dropped:
+        say(f"{name}: {title[:70]}   [{reason}]")
+    say("=== moved to the opinion block ===")
+    for a in opinion_moved:
+        say(f"{a['source']}: {a['title'][:70]}")
+    trending = trending_terms(candidates)
+    say("=== trending words (outlets) ===")
+    say(", ".join(f"{t}({n})" for t, n in sorted(trending.items(), key=lambda kv: -kv[1])[:15]) or "none")
+    say(f"=== biggest story groups (ONMISBAAR needs {MIN_SOURCES_FOR_ONMISBAAR} outlets) ===")
+    groups = find_onmisbaar(candidates, min_sources=2, max_clusters=6)
+    for g in groups:
+        say(f"{len(g['members'])} outlets: {g['title'][:70]}  ->  " + ", ".join(a["source"] for a in g["members"]))
+    if not groups:
+        say("no group of 2 or more outlets found")
+    say("=== end of debug ===")
+
+
 def main() -> int:
     dry_run = "--dry-run" in sys.argv
 
-    candidates = {name: fetch_articles(name, url) for name, (url, _) in FEEDS.items()}
-    for name, arts in candidates.items():
+    fetched = {}
+    for name, (url, _credit) in FEEDS.items():
+        articles = fetch_articles(name, url)
+        if not articles and name in FEED_FALLBACKS:
+            fb = FEED_FALLBACKS[name]
+            articles = fetch_with_discovery(name, fb["homepage"], fb["hints"],
+                                             fb.get("google_query"), fb.get("google_lang", "en"))
+        fetched[name] = articles
+    candidates: dict[str, list[dict]] = {}
+    dropped: list[tuple[str, str, str]] = []
+    for name, arts in fetched.items():
+        candidates[name] = []
         for a in arts:
             a["source"] = name
-    candidates = {name: [a for a in arts if not is_excluded(a)] for name, arts in candidates.items()}
+            reason = exclusion_reason(a)
+            if reason:
+                dropped.append((name, a["title"], reason))
+            else:
+                candidates[name].append(a)
 
     # Opinion pieces go in their own block at the bottom, not among the news
     opinion_pool: list[dict] = []
     for name in list(candidates):
         opinion_pool += [a for a in candidates[name] if is_opinion(a)]
         candidates[name] = [a for a in candidates[name] if not is_opinion(a)]
-    for name, url in OPINION_FEEDS.items():
-        for a in fetch_articles(name, url)[:OPINION_CANDIDATES]:
+    opinion_moved = list(opinion_pool)
+    for name, cfg in OPINION_FEEDS.items():
+        found = fetch_with_discovery(name, cfg["homepage"], cfg["hints"],
+                                      cfg.get("google_query"), cfg.get("google_lang", "en"))
+        for a in found[:OPINION_CANDIDATES]:
             a["source"] = name
             if not is_excluded(a):
                 opinion_pool.append(a)
+
+    if "--debug" in sys.argv:
+        print_debug(fetched, dropped, candidates, opinion_moved)
 
     onmisbaar, digest = select_articles(candidates)
     opinion = select_opinion(opinion_pool, trending_terms(candidates))
