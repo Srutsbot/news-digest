@@ -1,0 +1,520 @@
+<title>Vroege Dienst</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a broadcast rundown. Time runs down a mono column on the left, the story sits beside it. */
+:root {
+  --paper: #eef1f6; --sheet: #fbfcfe; --ink: #12172b; --muted: #59617a; --line: #d3d9e6;
+  --accent: #2333c9; --accent-soft: #e0e4fb; --signal: #d9310f; --signal-soft: #fde6e0;
+  --good: #0c7a57; --good-soft: #dcf3ea;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #0d1120; --sheet: #161b2e; --ink: #edf0fa; --muted: #9ea7c2; --line: #2b3350;
+    --accent: #9aa7ff; --accent-soft: #252c58; --signal: #ff8064; --signal-soft: #40201c;
+    --good: #62d6ad; --good-soft: #15352d;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0d1120; --sheet: #161b2e; --ink: #edf0fa; --muted: #9ea7c2; --line: #2b3350;
+  --accent: #9aa7ff; --accent-soft: #252c58; --signal: #ff8064; --signal-soft: #40201c;
+  --good: #62d6ad; --good-soft: #15352d;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 15px/1.5 var(--body);
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--sheet);
+}
+a { color: inherit; }
+button, select, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.wrap {
+  max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* masthead */
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--sheet); border-bottom: 1px solid var(--line);
+}
+.bar-in { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding-block: 10px; }
+.brand { display: flex; align-items: center; gap: 9px; font: 800 19px/1 var(--display); letter-spacing: -.02em; }
+.lamp { width: 10px; height: 10px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
+.tabs { display: flex; gap: 2px; flex-wrap: wrap; }
+.tab {
+  border: 0; background: none; padding: 7px 11px; border-radius: 6px; cursor: pointer;
+  font-weight: 600; color: var(--muted);
+}
+.tab:hover { color: var(--ink); background: var(--paper); }
+.tab[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); }
+.tab .n { font: 500 12px var(--mono); margin-left: 3px; }
+.search { margin-left: auto; flex: 1 1 200px; max-width: 300px; }
+.search input {
+  width: 100%; padding: 7px 10px; background: var(--paper);
+  border: 1px solid var(--line); border-radius: 6px;
+}
+
+/* opening */
+.open { padding-block: 26px 18px; display: grid; gap: 8px; }
+.open h1 {
+  margin: 0; font: 800 clamp(30px, 5.4vw, 54px)/1.02 var(--display); letter-spacing: -.035em;
+  text-wrap: balance; max-width: 22ch;
+}
+.tally { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--muted); font: 400 13px var(--mono); }
+.tally b { color: var(--ink); font-weight: 500; }
+.stale { padding: 9px 12px; background: var(--signal-soft); color: var(--ink); border-radius: 6px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; padding-bottom: 56px; align-items: start; }
+.rail { display: grid; gap: 28px; }
+.eyebrow {
+  margin: 0 0 10px; font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+}
+.eyebrow.hot { color: var(--signal); }
+section + section { margin-top: 32px; }
+
+/* rundown rows */
+.rundown { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; }
+.row { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 4px 14px; padding: 15px 16px; }
+.row + .row { border-top: 1px solid var(--line); }
+.slug { font: 500 12px/1.75 var(--mono); color: var(--muted); }
+.head { margin: 0; font: 700 19px/1.2 var(--display); letter-spacing: -.012em; text-wrap: pretty; }
+.head.sm { font-size: 16.5px; }
+.head a { text-decoration: none; }
+.head a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.snip { margin: 5px 0 0; color: var(--muted); font-size: 14px; max-width: 65ch; overflow-wrap: anywhere; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 9px; font-size: 13px; color: var(--muted); }
+.meta a { color: var(--accent); text-underline-offset: 2px; }
+.src { font-weight: 600; color: var(--ink); }
+.chip {
+  display: inline-block; padding: 1px 7px; border-radius: 4px;
+  font: 500 11.5px/1.6 var(--mono); background: var(--paper); color: var(--muted);
+}
+.chip.new { background: var(--accent-soft); color: var(--accent); }
+.chip.hot { background: var(--signal-soft); color: var(--signal); }
+.chip.ok { background: var(--good-soft); color: var(--good); }
+.act {
+  border: 1px solid var(--line); background: var(--sheet); border-radius: 5px; padding: 2px 9px;
+  font-size: 13px; font-weight: 600; cursor: pointer; color: var(--ink); text-decoration: none; display: inline-block;
+}
+.act:hover { border-color: var(--accent); color: var(--accent); }
+.act.on { background: var(--accent); border-color: var(--accent); color: var(--sheet); }
+.act.quiet { border-color: transparent; background: none; color: var(--muted); font-weight: 500; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+/* coverage meter: one tick per outlet, Dutch and international split */
+.cover { display: flex; gap: 2px; align-items: center; margin-top: 11px; flex-wrap: wrap; }
+.tick { width: 14px; height: 9px; border-radius: 2px; background: var(--line); }
+.tick.on { background: var(--signal); }
+.tick.sep { margin-left: 7px; }
+.cover span.lbl { margin-left: 9px; font: 400 12px var(--mono); color: var(--muted); }
+
+/* outlets */
+.outlets { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+.outlet { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 13px 15px; display: flex; flex-direction: column; gap: 11px; }
+.outlet h3 { margin: 0; font: 500 12px var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.story { display: grid; gap: 4px; }
+.story a { font: 500 14.5px/1.3 var(--body); text-decoration: none; overflow-wrap: anywhere; }
+.story a:hover { color: var(--accent); text-decoration: underline; }
+.story .acts { margin-top: 2px; align-items: center; }
+
+/* side rail */
+.card { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 15px; }
+.wek a { font: 700 16px/1.25 var(--display); text-decoration: none; }
+.wek a:hover { color: var(--accent); }
+.terms { display: flex; flex-wrap: wrap; gap: 5px; }
+.term { border: 1px solid var(--line); background: var(--sheet); border-radius: 4px; padding: 2px 7px; font: 400 12.5px var(--mono); cursor: pointer; }
+.term:hover { border-color: var(--accent); }
+.term[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--sheet); }
+.term i { font-style: normal; opacity: .65; margin-left: 3px; }
+.list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.list a { text-decoration: none; font-weight: 500; }
+.list a:hover { color: var(--accent); text-decoration: underline; }
+.list small { display: block; color: var(--muted); font-size: 12.5px; }
+.note { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
+
+/* research filters and source table */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-bottom: 13px; }
+.switch { display: flex; align-items: center; gap: 7px; margin-bottom: 14px; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+.switch input { accent-color: var(--accent); }
+.day { padding: 8px 16px; background: var(--paper); font: 500 12px var(--mono); color: var(--muted); border-top: 1px solid var(--line); }
+.day:first-child { border-top: 0; border-radius: 8px 8px 0 0; }
+.day + .row { border-top: 1px solid var(--line); }
+.src-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.src-table caption { text-align: left; }
+.src-table th { text-align: left; font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 10px 0 4px; }
+.src-table td { padding: 3px 0; vertical-align: top; }
+.src-table td:last-child { text-align: right; white-space: nowrap; font: 400 12px var(--mono); color: var(--muted); }
+.src-table .bad { color: var(--signal); }
+
+/* shortlist */
+.pitch { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 10px; }
+.pitches { display: grid; gap: 12px; }
+.pitch-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; }
+.pitch label { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
+.pitch textarea { width: 100%; min-height: 76px; padding: 8px 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; resize: vertical; color: var(--ink); }
+.pitch select { padding: 3px 6px; background: var(--paper); border: 1px solid var(--line); border-radius: 5px; }
+.empty { background: var(--sheet); border: 1px dashed var(--line); border-radius: 8px; padding: 26px 20px; }
+.empty h2 { margin: 0 0 6px; font: 700 20px var(--display); }
+.empty p { margin: 0; color: var(--muted); max-width: 55ch; }
+.copybox { width: 100%; min-height: 160px; margin-top: 12px; padding: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; font: 400 13px var(--mono); }
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 6;
+  background: var(--ink); color: var(--paper); padding: 7px 14px; border-radius: 6px; font-size: 13.5px;
+}
+.foot { padding-block: 0 40px; color: var(--muted); font-size: 12.5px; max-width: 80ch; }
+
+@media (max-width: 880px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .search { max-width: none; margin-left: 0; flex-basis: 100%; }
+}
+@media (max-width: 480px) {
+  .row { grid-template-columns: minmax(0, 1fr); }
+  .tab { padding: 6px 8px; }
+}
+</style>
+
+<header class="bar"><div class="wrap bar-in">
+  <div class="brand"><span class="lamp" aria-hidden="true"></span>Vroege Dienst</div>
+  <div class="tabs" role="tablist" aria-label="Onderdelen">
+    <button class="tab" role="tab" id="tab-news" data-view="news">Actualiteit</button>
+    <button class="tab" role="tab" id="tab-research" data-view="research">Onderzoek</button>
+    <button class="tab" role="tab" id="tab-ideas" data-view="ideas">Mijn voorzetten<span class="n" id="idea-count"></span></button>
+  </div>
+  <div class="search"><input id="q" type="search" placeholder="Zoek in koppen en bronnen" aria-label="Zoek in koppen en bronnen"></div>
+</div></header>
+
+<main class="wrap">
+  <div class="open" id="open"></div>
+  <div id="view"></div>
+</main>
+<footer class="wrap foot" id="foot"></footer>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+/* ---------- storage: stays in this browser only ---------- */
+const store = {
+  get(key, fallback) { try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch (e) { return fallback; } },
+  set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; } },
+};
+const IDEAS_KEY = "vd.ideas", VISIT_KEY = "vd.visit", PREV_KEY = "vd.previous";
+const STATUSES = ["Idee", "Uitzoeken", "Voorgesteld", "Afgevallen"];
+let ideas = store.get(IDEAS_KEY, []);
+if (!Array.isArray(ideas)) ideas = [];
+
+const nowMs = Date.now();
+const lastVisit = store.get(VISIT_KEY, 0);
+if (nowMs - lastVisit > 3600000) {            /* an hour apart counts as a new visit */
+  if (lastVisit) store.set(PREV_KEY, lastVisit);
+  store.set(VISIT_KEY, nowMs);
+}
+const previousVisit = store.get(PREV_KEY, 0);
+const newSince = previousVisit || nowMs - 86400000;
+
+/* ---------- helpers ---------- */
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (k === "value" || k === "checked") el[k] = v;
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid === null || kid === undefined || kid === false) continue;
+    el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return el;
+}
+function safe(url) { return /^https?:\/\//i.test(url || "") ? url : "#"; }
+function ext(url, text, cls) { return h("a", { href: safe(url), target: "_blank", rel: "noopener noreferrer", class: cls }, text); }
+
+const TZ = "Europe/Amsterdam";
+const fmt = (opts) => new Intl.DateTimeFormat("nl-NL", { timeZone: TZ, ...opts });
+const dayKey = (d) => fmt({ year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+function shortTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (dayKey(d) === dayKey(new Date())) return fmt({ hour: "2-digit", minute: "2-digit" }).format(d);
+  return fmt({ day: "numeric", month: "short" }).format(d);
+}
+function dayLabel(iso) {
+  if (!iso) return "Zonder datum";
+  const d = new Date(iso);
+  if (dayKey(d) === dayKey(new Date())) return "Vandaag";
+  if (dayKey(d) === dayKey(new Date(Date.now() - 86400000))) return "Gisteren";
+  return fmt({ weekday: "long", day: "numeric", month: "long" }).format(d);
+}
+const isNew = (iso) => !!iso && new Date(iso).getTime() > newSince;
+const norm = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/* ---------- state ---------- */
+const VIEWS = ["news", "research", "ideas"];
+let view = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "news";
+let query = "", term = null, region = null, showGeneral = false;
+const expanded = new Set();
+
+const OUTLETS = DATA.news.outlets, PLATFORMS = DATA.research.platforms, ITEMS = DATA.research.items;
+const FIRST_FOREIGN = OUTLETS.findIndex((o) => o.name.startsWith("The Guardian"));
+const matches = (...parts) => !query || parts.some((p) => norm(p).includes(query));
+
+/* ---------- shortlist ---------- */
+const hasIdea = (link) => ideas.some((i) => i.link === link);
+function saveIdeas() {
+  if (!store.set(IDEAS_KEY, ideas)) toast("Opslaan lukt niet in deze browser. Je selectie blijft staan tot je de pagina sluit.");
+  document.getElementById("idea-count").textContent = ideas.length ? " " + ideas.length : "";
+}
+function toggleIdea(a, button) {
+  if (hasIdea(a.link)) {
+    ideas = ideas.filter((i) => i.link !== a.link);
+    toast("Verwijderd uit je voorzetten");
+  } else {
+    ideas.unshift({ link: a.link, title: a.title, source: a.source, language: a.language || "", published: a.published || null, status: "Idee", note: "" });
+    toast("Bewaard bij je voorzetten");
+  }
+  saveIdeas();
+  if (button) { const on = hasIdea(a.link); button.classList.toggle("on", on); button.textContent = on ? "Bewaard" : "Bewaar"; button.setAttribute("aria-pressed", on); }
+}
+function saveButton(a) {
+  const on = hasIdea(a.link);
+  const b = h("button", { class: "act" + (on ? " on" : ""), "aria-pressed": on ? "true" : "false", type: "button" }, on ? "Bewaard" : "Bewaar");
+  b.addEventListener("click", () => toggleIdea(a, b));
+  return b;
+}
+function translateLink(a) {
+  if (/^(NL|EN)/.test(a.language || "")) return null;
+  return ext("https://translate.google.com/?sl=auto&tl=nl&op=translate&text=" + encodeURIComponent(a.title), "Vertaal kop", "act quiet");
+}
+function pitchText(i) {
+  const lines = [i.title, `Bron: ${i.source}${i.language ? " (" + i.language + ")" : ""}`, i.link];
+  if (i.note) lines.push("", i.note);
+  return lines.join("\n");
+}
+
+let toastTimer;
+function toast(text) {
+  const el = document.getElementById("toast");
+  el.textContent = text; el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, 2400);
+}
+
+/* ---------- views ---------- */
+function renderOpen() {
+  const generated = new Date(DATA.generated);
+  const title = fmt({ weekday: "long", day: "numeric", month: "long" }).format(generated);
+  const okO = OUTLETS.filter((o) => o.ok).length, okP = PLATFORMS.filter((p) => p.ok).length;
+  const fresh = OUTLETS.flatMap((o) => o.articles).concat(ITEMS).filter((a) => isNew(a.published)).length;
+  const hours = (Date.now() - generated) / 3600000;
+  document.getElementById("open").replaceChildren(...[
+    h("h1", null, title.charAt(0).toUpperCase() + title.slice(1)),
+    h("div", { class: "tally" },
+      h("span", null, "opgehaald ", h("b", null, fmt({ hour: "2-digit", minute: "2-digit" }).format(generated))),
+      h("span", null, h("b", null, DATA.news.onmisbaar.length), " onmisbaar"),
+      h("span", null, h("b", null, fresh), previousVisit ? " nieuw sinds je vorige bezoek" : " van de laatste 24 uur"),
+      h("span", null, h("b", null, `${okO}/${OUTLETS.length}`), " media"),
+      h("span", null, h("b", null, `${okP}/${PLATFORMS.length}`), " onderzoeksplatforms")),
+    hours > 14 && h("div", { class: "stale" }, `Deze editie is ${Math.round(hours)} uur oud. Controleer of de GitHub-workflow nog draait.`),
+  ].filter(Boolean));
+}
+
+function coverage(members) {
+  const have = new Set(members.map((m) => m.source));
+  return h("div", { class: "cover", role: "img", "aria-label": `${have.size} van ${OUTLETS.length} media` },
+    OUTLETS.map((o, i) => h("span", { class: "tick" + (have.has(o.name) ? " on" : "") + (i === FIRST_FOREIGN ? " sep" : ""), title: o.name })),
+    h("span", { class: "lbl" }, `${have.size} van ${OUTLETS.length} media`));
+}
+
+function renderNews() {
+  const stories = DATA.news.onmisbaar.filter((s) => !term && matches(s.title, ...s.members.map((m) => m.source + " " + m.title)));
+  const main = [];
+  if (!term && stories.length) {
+    main.push(h("section", null,
+      h("h2", { class: "eyebrow hot" }, "Onmisbaar"),
+      h("div", { class: "rundown" }, stories.map((s, i) => {
+        const inBnr = s.members.some((m) => m.source === "BNR");
+        const first = s.members[0];
+        return h("article", { class: "row" },
+          h("div", { class: "slug" }, String(s.members.length) + " media"),
+          h("div", null,
+            h("h3", { class: "head" }, s.title),
+            coverage(s.members),
+            h("div", { class: "meta" },
+              h("span", { class: "chip" + (inBnr ? " ok" : "") }, inBnr ? "Staat bij BNR" : "Niet in BNR-koppen"),
+              s.members.map((m) => ext(m.link, m.source))),
+            h("div", { class: "acts" }, saveButton({ link: first.link, title: s.title, source: first.source }))));
+      }))));
+  }
+
+  const cards = OUTLETS.map((o) => {
+    let list = o.articles;
+    if (term) list = list.filter((a) => a.terms.includes(term));
+    list = list.filter((a) => matches(a.title, a.snippet, o.name));
+    return { o, list };
+  }).filter(({ o, list }) => list.length || (!o.ok && !term && !query));
+
+  main.push(h("section", null,
+    h("h2", { class: "eyebrow" }, term ? `Koppen met “${term}”` : "Bij de redacties"),
+    cards.length ? h("div", { class: "outlets" }, cards.map(({ o, list }) => {
+      const open = expanded.has(o.name) || term || query;
+      const shown = open ? list : list.slice(0, 3);
+      return h("article", { class: "outlet" },
+        h("h3", null, h("span", null, o.name), !o.ok && h("span", { class: "chip hot" }, "niet bereikt")),
+        !o.ok && h("p", { class: "snip" }, "Deze bron gaf geen koppen terug."),
+        shown.map((a) => h("div", { class: "story" },
+          ext(a.link, a.title),
+          h("div", { class: "acts" },
+            a.published && h("span", { class: "mono chip" + (isNew(a.published) ? " new" : "") }, shortTime(a.published)),
+            saveButton({ ...a, source: o.name })))),
+        !open && list.length > 3 && h("button", { class: "act quiet", type: "button", onclick: () => { expanded.add(o.name); renderView(); } }, `Toon ${list.length - 3} meer`));
+    })) : h("p", { class: "snip" }, "Niets gevonden. Pas je zoekopdracht aan."),
+  ));
+
+  const w = DATA.news.wekdienst;
+  const rail = [
+    w && h("section", null, h("h2", { class: "eyebrow" }, "NOS Wekdienst"),
+      h("div", { class: "card wek" }, ext(w.link, w.title), w.snippet && h("p", { class: "snip" }, w.snippet))),
+    DATA.news.trending.length && h("section", null, h("h2", { class: "eyebrow" }, "Veelgenoemd"),
+      h("div", { class: "terms" }, DATA.news.trending.slice(0, 24).map((t) =>
+        h("button", { class: "term", type: "button", "aria-pressed": term === t.term ? "true" : "false",
+          onclick: () => { term = term === t.term ? null : t.term; renderView(); } }, t.term, h("i", null, t.outlets)))),
+      h("p", { class: "note" }, "Het getal is het aantal media met dit woord in een kop. Klik om te filteren.")),
+    DATA.news.opinion.length && h("section", null, h("h2", { class: "eyebrow" }, "Opinie"),
+      h("ul", { class: "list" }, DATA.news.opinion.map((a) => h("li", null, ext(a.link, a.title), h("small", null, a.source))))),
+  ];
+  return h("div", { class: "grid" }, h("div", null, main), h("aside", { class: "rail" }, rail));
+}
+
+function renderResearch() {
+  const hiddenGeneral = ITEMS.filter((a) => a.general).length;
+  const list = ITEMS.filter((a) => (showGeneral || !a.general) && (!region || a.region === region)
+    && matches(a.title, a.snippet, a.source, a.region));
+  const regions = [...new Set(PLATFORMS.map((p) => p.region))];
+
+  const groups = [];
+  for (const a of list) {
+    const label = dayLabel(a.published);
+    if (!groups.length || groups[groups.length - 1].label !== label) groups.push({ label, items: [] });
+    groups[groups.length - 1].items.push(a);
+  }
+
+  const rows = groups.flatMap((g) => [
+    h("div", { class: "day" }, g.label.charAt(0).toUpperCase() + g.label.slice(1)),
+    g.items.map((a) => h("article", { class: "row" },
+      h("div", { class: "slug" }, a.language),
+      h("div", null,
+        h("h3", { class: "head sm", dir: "auto" }, ext(a.link, a.title)),
+        a.snippet && h("p", { class: "snip", dir: "auto" }, a.snippet),
+        h("div", { class: "meta" },
+          h("span", { class: "src" }, a.source),
+          isNew(a.published) && h("span", { class: "chip new" }, "nieuw"),
+          a.story !== null && a.story !== undefined && h("span", { class: "chip hot" }, "Mogelijk meerdere platforms"),
+          a.general && h("span", { class: "chip" }, "algemene feed"),
+          a.echoes.length > 0 && h("span", { class: "chip ok", title: "Twee of meer gedeelde woorden met koppen van: " + a.echoes.join(", ") },
+            "Mogelijk ook bij " + a.echoes.slice(0, 2).join(", ") + (a.echoes.length > 2 ? ` +${a.echoes.length - 2}` : ""))),
+        h("div", { class: "acts" }, saveButton(a), translateLink(a))))),
+  ]);
+
+  const table = regions.map((r) => {
+    const members = PLATFORMS.filter((p) => p.region === r);
+    return [h("tr", null, h("th", { colspan: "2", scope: "colgroup" }, r)),
+      members.map((p) => h("tr", null,
+        h("td", { class: p.ok ? "" : "bad" }, p.name, p.general ? " *" : ""),
+        h("td", { class: p.ok ? "" : "bad" }, p.ok ? p.count : "niet bereikt")))];
+  });
+  const quiet = PLATFORMS.filter((p) => p.ok && !p.count).length;
+
+  return h("div", { class: "grid" },
+    h("section", null,
+      h("h2", { class: "eyebrow" }, `Onderzoek van de laatste ${DATA.research.maxAgeDays} dagen`),
+      h("div", { class: "filters" },
+        h("button", { class: "term", type: "button", "aria-pressed": !region ? "true" : "false", onclick: () => { region = null; renderView(); } }, "Alle regio's"),
+        regions.map((r) => h("button", { class: "term", type: "button", "aria-pressed": region === r ? "true" : "false", onclick: () => { region = r; renderView(); } }, r))),
+      h("label", { class: "switch" },
+        h("input", { id: "general", type: "checkbox", checked: showGeneral, onchange: (e) => { showGeneral = e.target.checked; renderView(); } }),
+        `Toon ook bronnen met vooral dagelijks nieuws (${hiddenGeneral} koppen)`),
+      rows.length ? h("div", { class: "rundown" }, rows) : h("p", { class: "snip" }, "Niets gevonden. Kies een andere regio of pas je zoekopdracht aan.")),
+    h("aside", { class: "rail" },
+      h("section", null, h("h2", { class: "eyebrow" }, "Bronnen vandaag"),
+        h("div", { class: "card" },
+          h("table", { class: "src-table" }, h("tbody", null, table)),
+          h("p", { class: "note" }, `Het getal is het aantal koppen op deze pagina. ${quiet ? quiet + " bereikte platforms publiceerden niets in deze periode. " : ""}* Vooral dagelijks nieuws, standaard verborgen.`)))));
+}
+
+function renderIdeas() {
+  if (!ideas.length) {
+    return h("div", { class: "empty" },
+      h("h2", null, "Nog geen voorzetten"),
+      h("p", null, "Klik bij een kop op Bewaar. Hier houd je per verhaal je status en aantekeningen bij, en kopieer je het als voorstel voor de redactie."));
+  }
+  const list = ideas.filter((i) => matches(i.title, i.source, i.note));
+  const box = h("div", { id: "copy-slot" });
+  const copy = async () => {
+    const text = list.filter((i) => i.status !== "Afgevallen").map(pitchText).join("\n\n---\n\n");
+    try { await navigator.clipboard.writeText(text); toast("Gekopieerd"); }
+    catch (e) {
+      const area = h("textarea", { class: "copybox", id: "copy-text", "aria-label": "Tekst om te kopiëren", readonly: true });
+      area.value = text; box.replaceChildren(area); area.focus(); area.select();
+      toast("Kopiëren werd geblokkeerd. Selecteer de tekst hieronder.");
+    }
+  };
+  return h("section", { style: "padding-bottom:56px" },
+    h("div", { class: "pitch-top", style: "margin-bottom:12px" },
+      h("h2", { class: "eyebrow", style: "margin:0" }, "Mijn voorzetten"),
+      h("button", { class: "act", type: "button", onclick: copy }, "Kopieer als voorstel")),
+    box,
+    h("p", { class: "note", style: "margin:0 0 12px" }, "Je selectie en aantekeningen staan alleen in deze browser. Ze gaan niet mee naar GitHub of een ander apparaat."),
+    h("div", { class: "pitches" }, list.map((i, n) => h("article", { class: "pitch" },
+      h("div", { class: "pitch-top" },
+        h("span", { class: "src" }, i.source, i.language ? " · " + i.language : ""),
+        h("select", { id: "status-" + n, "aria-label": "Status", onchange: (e) => { i.status = e.target.value; saveIdeas(); } },
+          STATUSES.map((s) => { const o = h("option", { value: s }, s); o.selected = s === i.status; return o; }))),
+      h("h3", { class: "head sm" }, ext(i.link, i.title)),
+      h("label", null, "Aantekeningen: invalshoek, bronnen, Nederlandse haak",
+        h("textarea", { id: "note-" + n, value: i.note, oninput: (e) => { i.note = e.target.value; saveIdeas(); } })),
+      h("div", { class: "acts" },
+        h("button", { class: "act quiet", type: "button", onclick: () => { ideas = ideas.filter((x) => x !== i); saveIdeas(); renderView(); } }, "Verwijder"))))));
+}
+
+function renderView() {
+  for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", t.dataset.view === view ? "true" : "false");
+  const content = view === "news" ? renderNews() : view === "research" ? renderResearch() : renderIdeas();
+  document.getElementById("view").replaceChildren(content);
+}
+
+/* ---------- wiring ---------- */
+for (const t of document.querySelectorAll(".tab")) {
+  t.addEventListener("click", () => {
+    view = t.dataset.view;
+    try { history.replaceState(null, "", "#" + view); } catch (e) {}
+    renderView();
+    window.scrollTo(0, 0);
+  });
+}
+document.getElementById("q").addEventListener("input", (e) => { query = norm(e.target.value.trim()); renderView(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); document.getElementById("q").focus(); }
+});
+document.getElementById("foot").textContent =
+  "Koppen linken naar de originele artikelen; sommige zitten achter een betaalmuur. “Niet in BNR-koppen”, “Mogelijk ook bij” en “Mogelijk meerdere platforms” zijn automatische vergelijkingen van woorden in de opgehaalde koppen. Controleer ze voordat je erop afgaat.";
+document.getElementById("idea-count").textContent = ideas.length ? " " + ideas.length : "";
+renderOpen();
+renderView();
+</script>

@@ -193,6 +193,7 @@ def fetch_articles(name: str, url: str) -> list[dict]:
         if any(part in link for part in SKIP_LINK_PARTS):
             continue
         stamp = entry.get("published_parsed") or entry.get("updated_parsed")
+        published = None
         if stamp:
             published = datetime(*stamp[:6], tzinfo=timezone.utc)
             if published < cutoff:
@@ -201,7 +202,8 @@ def fetch_articles(name: str, url: str) -> list[dict]:
         seen.add(link)
         snippet = truncate(clean(entry.get("summary", "")), SNIPPET_CHARS)
         categories = [t.get("term", "") for t in (entry.get("tags") or []) if t.get("term")]
-        articles.append({"title": title, "link": link, "snippet": snippet, "categories": categories})
+        articles.append({"title": title, "link": link, "snippet": snippet, "categories": categories,
+                         "published": published})
         if len(articles) >= CANDIDATES_PER_SOURCE:
             break
     if not articles and stale:
