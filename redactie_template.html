@@ -95,6 +95,7 @@ section + section { margin-top: 32px; }
 .head.sm { font-size: 16.5px; }
 .head a { text-decoration: none; }
 .head a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.orig { margin: 4px 0 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
 .snip { margin: 5px 0 0; color: var(--muted); font-size: 14px; max-width: 65ch; overflow-wrap: anywhere; }
 .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 9px; font-size: 13px; color: var(--muted); }
 .meta a { color: var(--accent); text-underline-offset: 2px; }
@@ -286,7 +287,7 @@ function toggleIdea(a, button) {
     ideas = ideas.filter((i) => i.link !== a.link);
     toast("Verwijderd uit je voorzetten");
   } else {
-    ideas.unshift({ link: a.link, title: a.title, source: a.source, language: a.language || "", published: a.published || null, status: "Idee", note: "" });
+    ideas.unshift({ link: a.link, title: a.titleNl || a.title, original: a.titleNl ? a.title : "", source: a.source, language: a.language || "", published: a.published || null, status: "Idee", note: "" });
     toast("Bewaard bij je voorzetten");
   }
   saveIdeas();
@@ -299,11 +300,13 @@ function saveButton(a) {
   return b;
 }
 function translateLink(a) {
-  if (/^(NL|EN)/.test(a.language || "")) return null;
+  if (a.titleNl || /^(NL|EN|NL\/EN)$/.test(a.language || "")) return null;
   return ext("https://translate.google.com/?sl=auto&tl=nl&op=translate&text=" + encodeURIComponent(a.title), "Vertaal kop", "act quiet");
 }
 function pitchText(i) {
-  const lines = [i.title, `Bron: ${i.source}${i.language ? " (" + i.language + ")" : ""}`, i.link];
+  const lines = [i.title];
+  if (i.original) lines.push(`Originele kop (machinevertaling hierboven): ${i.original}`);
+  lines.push(`Bron: ${i.source}${i.language ? " (" + i.language + ")" : ""}`, i.link);
   if (i.note) lines.push("", i.note);
   return lines.join("\n");
 }
@@ -405,7 +408,7 @@ function renderNews() {
 function renderResearch() {
   const hiddenGeneral = ITEMS.filter((a) => a.general).length;
   const list = ITEMS.filter((a) => (showGeneral || !a.general) && (!region || a.region === region)
-    && matches(a.title, a.snippet, a.source, a.region));
+    && matches(a.title, a.titleNl, a.snippet, a.source, a.region));
   const regions = [...new Set(PLATFORMS.map((p) => p.region))];
 
   const groups = [];
@@ -420,7 +423,8 @@ function renderResearch() {
     g.items.map((a) => h("article", { class: "row" },
       h("div", { class: "slug" }, a.language),
       h("div", null,
-        h("h3", { class: "head sm", dir: "auto" }, ext(a.link, a.title)),
+        h("h3", { class: "head sm", dir: "auto" }, ext(a.link, a.titleNl || a.title)),
+        a.titleNl && h("p", { class: "orig", dir: "auto" }, a.title),
         a.snippet && h("p", { class: "snip", dir: "auto" }, a.snippet),
         h("div", { class: "meta" },
           h("span", { class: "src" }, a.source),
@@ -487,6 +491,7 @@ function renderIdeas() {
         h("select", { id: "status-" + n, "aria-label": "Status", onchange: (e) => { i.status = e.target.value; saveIdeas(); } },
           STATUSES.map((s) => { const o = h("option", { value: s }, s); o.selected = s === i.status; return o; }))),
       h("h3", { class: "head sm" }, ext(i.link, i.title)),
+      i.original && h("p", { class: "orig", dir: "auto" }, i.original),
       h("label", null, "Aantekeningen: invalshoek, bronnen, Nederlandse haak",
         h("textarea", { id: "note-" + n, value: i.note, oninput: (e) => { i.note = e.target.value; saveIdeas(); } })),
       h("div", { class: "acts" },
@@ -513,7 +518,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); document.getElementById("q").focus(); }
 });
 document.getElementById("foot").textContent =
-  "Koppen linken naar de originele artikelen; sommige zitten achter een betaalmuur. “Niet in BNR-koppen”, “Mogelijk ook bij” en “Mogelijk meerdere platforms” zijn automatische vergelijkingen van woorden in de opgehaalde koppen. Controleer ze voordat je erop afgaat.";
+  "Koppen linken naar de originele artikelen; sommige zitten achter een betaalmuur. “Niet in BNR-koppen”, “Mogelijk ook bij” en “Mogelijk meerdere platforms” zijn automatische vergelijkingen van woorden in de opgehaalde koppen. Controleer ze voordat je erop afgaat. Anderstalige koppen zijn automatisch vertaald met MyMemory en kunnen fouten bevatten; de originele kop staat eronder.";
 document.getElementById("idea-count").textContent = ideas.length ? " " + ideas.length : "";
 renderOpen();
 renderView();

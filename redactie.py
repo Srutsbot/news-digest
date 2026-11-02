@@ -11,16 +11,24 @@ Reuses the feeds and helpers of digest.py and onderzoek.py. Sends no email and d
 onderzoek_seen.json, so it can run next to the two mails without influencing them.
 """
 import argparse
+import html
 import json
 import re
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+import requests
 
 import digest
 import onderzoek
 
 HERE = Path(__file__).parent
+# MyMemory: free and without a key, with a daily limit per IP address. Headlines that do not get
+# translated keep their original text and a button to translate them by hand.
+TRANSLATE_URL = "https://api.mymemory.translated.net/get"
+LATIN_LANGUAGES = {"DE", "FR", "IT", "ES", "PT"}
 TEMPLATE = HERE / "redactie_template.html"
 DATA_MARKER = "/*__DATA__*/null"
 
@@ -71,6 +79,46 @@ def fetch_outlet(item: tuple[str, tuple[str, str]]) -> tuple[str, list[dict]]:
 
 def fetch_platform(platform: tuple) -> tuple[str, list[dict]]:
     return platform[0], onderzoek.fetch_platform(*platform)[0]
+
+
+def source_language(title: str, label: str) -> str | None:
+    """Language to translate from. None for Dutch and English, and for mixed labels such as ES/EN
+    where a headline in Latin script could be either language."""
+    if re.search(r"[\u0600-\u06ff]", title):
+        return "ar"
+    if re.search(r"[\uac00-\ud7af]", title):
+        return "ko"
+    if re.search(r"[\u0400-\u04ff]", title):
+        return "ru"
+    codes = label.split("/")
+    latin = [code for code in codes if code in LATIN_LANGUAGES]
+    return latin[0].lower() if latin and "EN" not in codes else None
+
+
+def translate_title(title: str, source: str) -> str | None:
+    try:
+        resp = requests.get(TRANSLATE_URL, timeout=15, params={"q": title, "langpair": f"{source}|nl"})
+        resp.raise_for_status()
+        data = resp.json()
+        if data.get("quotaFinished") or str(data.get("responseStatus")) != "200":
+            return None
+        text = html.unescape(data["responseData"]["translatedText"]).strip()
+        return None if not text or text.upper().startswith("MYMEMORY WARNING") else text
+    except (requests.RequestException, ValueError, KeyError, TypeError):
+        return None
+
+
+def add_translations(items: list[dict]) -> None:
+    """Hidden general-news feeds come last, so a daily limit hits the investigative headlines last."""
+    todo = [(item, source) for item in sorted(items, key=lambda i: i["general"])
+            if (source := source_language(item["title"], item["language"]))]
+    with ThreadPoolExecutor(3) as pool:
+        results = pool.map(lambda pair: translate_title(pair[0]["title"], pair[1]), todo)
+        for (item, _source), translated in zip(todo, results):
+            if translated and translated != item["title"]:
+                item["titleNl"] = translated
+    done = sum("titleNl" in item for item, _source in todo)
+    print(f"[info] translated {done} of {len(todo)} foreign-language headlines", file=sys.stderr)
 
 
 def news_item(article: dict, trending: dict[str, int]) -> dict:
@@ -169,6 +217,7 @@ def build_research(candidates: dict[str, list[dict]], now: datetime) -> dict:
                 "general": name in GENERAL_FEEDS,
             })
     items.sort(key=lambda a: a["published"] or "", reverse=True)
+    add_translations(items)
     return {"platforms": platforms, "items": items, "maxAgeDays": MAX_RESEARCH_AGE_DAYS,
             "stories": [story["title"] for story in clusters]}
 
