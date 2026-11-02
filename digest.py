@@ -36,6 +36,7 @@ FEEDS = {
     "De Telegraaf": ("https://www.telegraaf.nl/rss", "De Telegraaf"),
     "AD": ("https://www.ad.nl/home/rss.xml", "AD"),
     "Het Parool": ("https://www.parool.nl/voorpagina/rss.xml", "Het Parool"),
+    "Trouw": ("https://www.trouw.nl/voorpagina/rss.xml", "Trouw"),
     "Vrij Nederland": ("https://www.vn.nl/feed/", "Vrij Nederland"),
     "BNR": ("https://www.bnr.nl/", "FD Mediagroep"),  # no working RSS: headlines are scraped from the homepage
     # "Follow the Money": no public RSS feed found on ftm.nl -- add a URL here if you find one
@@ -43,6 +44,7 @@ FEEDS = {
     "The Guardian (Europe)": ("https://www.theguardian.com/europe/rss", "Guardian News & Media"),
     "The New York Times": ("https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", "The New York Times Company"),
     "The Wall Street Journal": ("https://feeds.a.dj.com/rss/RSSWorldNews.xml", "Dow Jones & Company"),
+    "The Washington Post": ("https://feeds.washingtonpost.com/rss/world", "The Washington Post"),
 }
 
 # Sources whose main feed URL has been unreliable: try these candidates in order, then fall back
@@ -53,12 +55,21 @@ FEED_FALLBACKS = {
         "hints": [],                                   # discovery here won't help -- go straight to Google News
         "google_query": "site:wsj.com", "google_lang": "en",
     },
+    "BNR": {  # bnr.nl sometimes answers the homepage scraper with 403: use Google News then
+        "homepage": "https://www.bnr.nl/", "hints": [], "discover": False,
+        "google_query": "site:bnr.nl", "google_lang": "nl",
+    },
+    "The Washington Post": {
+        "homepage": "https://www.washingtonpost.com/world/",  # its feed servers answer 502 to scripts,
+        "hints": [], "discover": False,                       # so go straight to Google News
+        "google_query": "site:washingtonpost.com", "google_lang": "en",
+    },
 }
 
 ARTICLES_PER_SOURCE = 3        # headlines shown per outlet
 CANDIDATES_PER_SOURCE = 15     # headlines per outlet that are scanned for big stories / trending words
 MAX_ARTICLE_AGE_DAYS = 5       # drop feed items older than this (catches stale/broken feeds); items with no date always pass
-MIN_SOURCES_FOR_ONMISBAAR = 4  # a story in at least 4 outlets goes in the ONMISBAAR box
+MIN_SOURCES_FOR_ONMISBAAR = 3  # a story in at least 3 outlets goes in the ONMISBAAR box
 MIN_SOURCES_FOR_TERM = 3       # a word in the headlines of MORE than 2 outlets is "trending"
 MIN_SHARED_WORDS = 2           # two headlines are "the same story" if they share this many words
 MAX_ONMISBAAR = 8              # max number of stories in the ONMISBAAR box
@@ -67,17 +78,14 @@ MAX_TERM_ARTICLES = 15         # safety cap on extra articles added because of t
 # --- Opinion pieces (shown at the bottom) ------------------------------------------------
 OPINION_COUNT = 3
 OPINION_CANDIDATES = 8                   # headlines read per opinion feed
-OPINION_SKIP_OUTLETS = {"De Telegraaf"}  # never show opinion from these outlets
+# never show opinion from these outlets (De Telegraaf by choice; the English-language outlets
+# are news-only)
+OPINION_SKIP_OUTLETS = {"De Telegraaf", "The Guardian", "The New York Times",
+                        "The Wall Street Journal", "The Washington Post"}
 OPINION_FEEDS = {  # outlet -> {homepage, hints, google_query (fallback), google_lang}
     "de Volkskrant": {"homepage": "https://www.volkskrant.nl/columns/", "hints": [],
                        "google_query": "site:volkskrant.nl inurl:columns-opinie", "google_lang": "nl"},
-    "The Guardian": {"homepage": "https://www.theguardian.com/commentisfree",
-                      "hints": ["https://www.theguardian.com/commentisfree/rss"]},
-    "The New York Times": {"homepage": "https://www.nytimes.com/section/opinion",
-                            "hints": ["https://rss.nytimes.com/services/xml/rss/nyt/Opinion.xml"],
-                            "google_query": "site:nytimes.com/opinion", "google_lang": "en"},
-    "The Wall Street Journal": {"homepage": "https://www.wsj.com/news/opinion", "hints": [],
-                                 "google_query": "site:wsj.com/opinion", "google_lang": "en"},
+    # English-language outlets (Guardian, NYT, WSJ, Washington Post) are deliberately left out
 }
 COMMON_FEED_PATHS = ("feed/", "rss", "rss.xml", "feed", "atom.xml")
 FEED_TAG_RE = re.compile(r'<link\b[^>]*?type="application/(?:rss|atom)\+xml"[^>]*>', re.I)
@@ -157,7 +165,8 @@ def truncate(text: str, limit: int) -> str:
 
 
 def fetch_articles(name: str, url: str) -> list[dict]:
-    if name in SCRAPERS:
+    # the scraper only applies to the outlet's own URL, not to fallback URLs such as Google News
+    if name in SCRAPERS and url == FEEDS.get(name, ("",))[0]:
         return SCRAPERS[name](name, url)
 
     try:
@@ -338,7 +347,8 @@ def google_news_feed(query: str, lang: str = "en", country: str = "US") -> str:
 
 
 def fetch_with_discovery(
-    name: str, homepage: str, hints: list[str], google_query: str | None = None, google_lang: str = "en"
+    name: str, homepage: str, hints: list[str], google_query: str | None = None, google_lang: str = "en",
+    discover: bool = True,
 ) -> list[dict]:
     """Try the known feed URLs, then discover one from the homepage, then Google News as a last resort.
 
@@ -347,7 +357,7 @@ def fetch_with_discovery(
     directly, so it is a fallback rather than a first choice.
     """
     tried = set()
-    for url in hints + list(discover_feed_urls(homepage)):
+    for url in hints + (list(discover_feed_urls(homepage)) if discover else []):
         if url in tried:
             continue
         tried.add(url)
@@ -658,7 +668,8 @@ def main() -> int:
         if not articles and name in FEED_FALLBACKS:
             fb = FEED_FALLBACKS[name]
             articles = fetch_with_discovery(name, fb["homepage"], fb["hints"],
-                                             fb.get("google_query"), fb.get("google_lang", "en"))
+                                             fb.get("google_query"), fb.get("google_lang", "en"),
+                                             discover=fb.get("discover", True))
         fetched[name] = articles
     candidates: dict[str, list[dict]] = {}
     dropped: list[tuple[str, str, str]] = []
