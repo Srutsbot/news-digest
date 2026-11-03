@@ -90,6 +90,14 @@ section + section { margin-top: 32px; }
 .rundown { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; }
 .row { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 4px 14px; padding: 15px 16px; }
 .row + .row { border-top: 1px solid var(--line); }
+.row.repeat { box-shadow: inset 3px 0 0 var(--signal); }
+.seen { margin-top: 10px; padding: 8px 10px; background: var(--signal-soft); border-radius: 6px; font-size: 13px; }
+.seen-h, .seen summary { font-weight: 600; }
+.seen summary { cursor: pointer; }
+.seen ul { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.seen li { overflow-wrap: anywhere; }
+.seen .when { font: 400 12px var(--mono); color: var(--muted); margin-right: 6px; }
+.seen a { text-underline-offset: 2px; }
 .slug { font: 500 12px/1.75 var(--mono); color: var(--muted); }
 .head { margin: 0; font: 700 19px/1.2 var(--display); letter-spacing: -.012em; text-wrap: pretty; }
 .head.sm { font-size: 16.5px; }
@@ -114,6 +122,9 @@ section + section { margin-top: 32px; }
 .act:hover { border-color: var(--accent); color: var(--accent); }
 .act.on { background: var(--accent); border-color: var(--accent); color: var(--sheet); }
 .act.quiet { border-color: transparent; background: none; color: var(--muted); font-weight: 500; }
+.act:disabled { opacity: .65; cursor: wait; }
+.act:disabled:hover { border-color: var(--line); color: var(--ink); }
+.refresh { padding: 7px 11px; border-radius: 6px; white-space: nowrap; }
 .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
 /* coverage meter: one tick per outlet, Dutch and international split */
@@ -181,7 +192,7 @@ section + section { margin-top: 32px; }
 
 @media (max-width: 880px) {
   .grid { grid-template-columns: minmax(0, 1fr); }
-  .search { max-width: none; margin-left: 0; flex-basis: 100%; }
+  .search { max-width: none; margin-left: 0; flex-basis: 100%; order: 1; }
 }
 @media (max-width: 480px) {
   .row { grid-template-columns: minmax(0, 1fr); }
@@ -194,9 +205,11 @@ section + section { margin-top: 32px; }
   <div class="tabs" role="tablist" aria-label="Onderdelen">
     <button class="tab" role="tab" id="tab-news" data-view="news">Actualiteit</button>
     <button class="tab" role="tab" id="tab-research" data-view="research">Onderzoek</button>
+    <button class="tab" role="tab" id="tab-science" data-view="science">Wetenschap</button>
     <button class="tab" role="tab" id="tab-ideas" data-view="ideas">Mijn voorzetten<span class="n" id="idea-count"></span></button>
   </div>
   <div class="search"><input id="q" type="search" placeholder="Zoek in koppen en bronnen" aria-label="Zoek in koppen en bronnen"></div>
+  <button class="act refresh" id="refresh" type="button">Ververs</button>
 </div></header>
 
 <main class="wrap">
@@ -267,12 +280,13 @@ const isNew = (iso) => !!iso && new Date(iso).getTime() > newSince;
 const norm = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /* ---------- state ---------- */
-const VIEWS = ["news", "research", "ideas"];
+const VIEWS = ["news", "research", "science", "ideas"];
 let view = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "news";
 let query = "", term = null, region = null, showGeneral = false;
 const expanded = new Set();
 
 const OUTLETS = DATA.news.outlets, PLATFORMS = DATA.research.platforms, ITEMS = DATA.research.items;
+const SCIENCE = DATA.science || { items: [], scanned: 0, maxAgeDays: 2, sourcesTotal: 0, sourcesUsed: 0 };
 const FIRST_FOREIGN = OUTLETS.findIndex((o) => o.name.startsWith("The Guardian"));
 const matches = (...parts) => !query || parts.some((p) => norm(p).includes(query));
 
@@ -312,11 +326,57 @@ function pitchText(i) {
 }
 
 let toastTimer;
-function toast(text) {
+function toast(text, ms = 2400) {
   const el = document.getElementById("toast");
   el.textContent = text; el.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.hidden = true; }, 2400);
+  toastTimer = setTimeout(() => { el.hidden = true; }, ms);
+}
+
+/* ---------- refresh: starts the GitHub workflow and reloads once the new edition is live ---------- */
+const REFRESH_TOKEN_KEY = "vd.refreshToken";   /* stays in this browser, never in the page source */
+const DISPATCH_URL = "https://api.github.com/repos/srutsbot/news-digest/actions/workflows/redactie.yml/dispatches";
+const REFRESH_POLL_MS = 10000, REFRESH_TIMEOUT_MS = 300000;
+
+async function waitForNewEdition() {
+  const started = Date.now();
+  while (Date.now() - started < REFRESH_TIMEOUT_MS) {
+    await new Promise((done) => setTimeout(done, REFRESH_POLL_MS));
+    try {
+      const resp = await fetch(location.pathname + "?v=" + Date.now(), { cache: "no-store" });
+      const found = (await resp.text()).match(/"generated":\s*"([^"]+)"/);
+      if (found && new Date(found[1]) > new Date(DATA.generated)) return true;
+    } catch (e) { /* a failed check is not fatal, the next one may work */ }
+  }
+  return false;
+}
+
+async function refreshPage() {
+  const button = document.getElementById("refresh");
+  const token = store.get(REFRESH_TOKEN_KEY, "") || (prompt("Plak je GitHub-token om te verversen. Het blijft alleen in deze browser staan.") || "").trim();
+  if (!token) return;
+  const reset = (message) => { button.disabled = false; button.textContent = "Ververs"; toast(message, 7000); };
+  button.disabled = true;
+  button.textContent = "Starten…";
+  let resp;
+  try {
+    resp = await fetch(DISPATCH_URL, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "Content-Type": "application/json" },
+      body: JSON.stringify({ ref: "main" }),
+    });
+  } catch (e) {
+    return reset("GitHub is niet bereikbaar. Probeer het zo nog eens.");
+  }
+  if ([401, 403, 404].includes(resp.status)) {
+    store.set(REFRESH_TOKEN_KEY, "");
+    return reset("GitHub accepteert dit token niet. Klik opnieuw op Ververs en plak een geldig token.");
+  }
+  if (!resp.ok) return reset(`Verversen is niet gestart (GitHub-status ${resp.status}). Probeer het zo nog eens.`);
+  store.set(REFRESH_TOKEN_KEY, token);
+  button.textContent = "Bezig met ophalen…";
+  if (await waitForNewEdition()) location.reload();
+  else reset("Dit duurt langer dan normaal. Kijk later nog eens, of bekijk de run in de Actions-tab van GitHub.");
 }
 
 /* ---------- views ---------- */
@@ -462,6 +522,56 @@ function renderResearch() {
           h("p", { class: "note" }, `Het getal is het aantal koppen op deze pagina. ${quiet ? quiet + " bereikte platforms publiceerden niets in deze periode. " : ""}* Vooral dagelijks nieuws, standaard verborgen.`)))));
 }
 
+function mentionList(items) {
+  return h("ul", null, items.map((m) => h("li", null,
+    h("span", { class: "when" }, shortTime(m.published)),
+    h("span", { class: "src" }, m.source), ": ",
+    ext(m.link, m.title))));
+}
+
+function renderScience() {
+  const list =SCIENCE.items.filter((a) => matches(a.title, a.snippet, a.source, a.reasons.join(" ")));
+  const groups = [];
+  for (const a of list) {
+    const label = dayLabel(a.published);
+    if (!groups.length || groups[groups.length - 1].label !== label) groups.push({ label, items: [] });
+    groups[groups.length - 1].items.push(a);
+  }
+  const rows = groups.flatMap((g) => [
+    h("div", { class: "day" }, g.label.charAt(0).toUpperCase() + g.label.slice(1)),
+    g.items.map((a) => h("article", { class: "row" + (a.repeat || a.terms.length ? " repeat" : "") },
+      h("div", { class: "slug" }, fmt({ hour: "2-digit", minute: "2-digit" }).format(new Date(a.published))),
+      h("div", null,
+        h("h3", { class: "head sm" }, ext(a.link, a.title)),
+        a.snippet && h("p", { class: "snip" }, a.snippet),
+        h("div", { class: "meta" },
+          h("span", { class: "src" }, a.source),
+          a.language !== "NL" && h("span", { class: "chip" }, a.language),
+          a.reasons.map((r) => h("span", { class: "chip" }, r)),
+          isNew(a.published) && h("span", { class: "chip new" }, "nieuw"),
+          a.echoes.length > 0 && h("span", { class: "chip ok", title: "Twee of meer gedeelde woorden met koppen van: " + a.echoes.join(", ") },
+            "Mogelijk ook bij " + a.echoes.slice(0, 2).join(", ") + (a.echoes.length > 2 ? ` +${a.echoes.length - 2}` : ""))),
+        a.repeat && h("div", { class: "seen" },
+          h("div", { class: "seen-h" }, `Mogelijk hetzelfde verhaal, ook hier genoemd (${a.repeat.count}× in ${a.repeat.days} ${a.repeat.days === 1 ? "dag" : "dagen"}):`),
+          mentionList(a.repeat.mentions)),
+        a.terms.map((t) => h("details", { class: "seen" },
+          h("summary", null, `“${t.term}” staat in nog ${t.count} ${t.count === 1 ? "kop" : "koppen"} (${t.sources} bronnen, ${t.days} dagen)`),
+          mentionList(t.mentions),
+          t.count > t.mentions.length && h("p", { class: "note", style: "margin:6px 0 0" }, `De ${t.mentions.length} nieuwste staan hier.`))),
+        h("div", { class: "acts" }, saveButton(a), translateLink(a))))),
+  ]);
+  return h("div", { class: "grid" },
+    h("section", null,
+      h("h2", { class: "eyebrow" }, "Wetenschap"),
+      rows.length ? h("div", { class: "rundown" }, rows) : h("p", { class: "snip" }, "Niets gevonden. Pas je zoekopdracht aan.")),
+    h("aside", { class: "rail" },
+      h("section", null, h("h2", { class: "eyebrow" }, "Zo is dit gekozen"),
+        h("div", { class: "card" },
+          h("p", { class: "note", style: "margin:0" }, `${SCIENCE.items.length} van de ${SCIENCE.scanned} koppen van de laatste ${SCIENCE.maxAgeDays} dagen, uit ${SCIENCE.sourcesUsed} van de ${SCIENCE.sourcesTotal} bronnen. Maximaal 2 koppen per bron, het nieuwste staat bovenaan.`),
+          h("p", { class: "note" }, "De keuze is een automatische vergelijking van woorden, geen redactioneel oordeel en geen meting van wat luisteraars horen. De labels tonen waarom een kop is gekozen. Lees het artikel voordat je het voorstelt."),
+          h("p", { class: "note" }, "Een rode streep betekent dat het verhaal of een woord uit de kop vaker voorkomt in de bronnen van de laatste 5 dagen. Ook dit is een woordvergelijking, en Nederlandse en Engelse koppen worden meestal niet aan elkaar gekoppeld.")))));
+}
+
 function renderIdeas() {
   if (!ideas.length) {
     return h("div", { class: "empty" },
@@ -500,7 +610,7 @@ function renderIdeas() {
 
 function renderView() {
   for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", t.dataset.view === view ? "true" : "false");
-  const content = view === "news" ? renderNews() : view === "research" ? renderResearch() : renderIdeas();
+  const content = view === "news" ? renderNews() : view === "research" ? renderResearch() : view === "science" ? renderScience() : renderIdeas();
   document.getElementById("view").replaceChildren(content);
 }
 
@@ -513,6 +623,7 @@ for (const t of document.querySelectorAll(".tab")) {
     window.scrollTo(0, 0);
   });
 }
+document.getElementById("refresh").addEventListener("click", refreshPage);
 document.getElementById("q").addEventListener("input", (e) => { query = norm(e.target.value.trim()); renderView(); });
 document.addEventListener("keydown", (e) => {
   if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); document.getElementById("q").focus(); }
