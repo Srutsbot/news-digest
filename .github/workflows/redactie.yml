@@ -1,10 +1,7 @@
 name: Vroege Dienst page
 
 on:
-  schedule:
-    - cron: "30 5 * * *"   # 06:30 Amsterdam in winter, 07:30 in summer
-    - cron: "30 11 * * *"  # 12:30 Amsterdam in winter, 13:30 in summer
-  workflow_dispatch:
+  workflow_dispatch: # started by cron-job.org, hourly 08:00-18:00 Amsterdam time
 
 permissions:
   contents: read
