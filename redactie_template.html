@@ -48,29 +48,48 @@ button, select, input, textarea { font: inherit; color: inherit; }
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
   background: var(--sheet); border-bottom: 1px solid var(--line);
 }
-.bar-in { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding-block: 10px; }
+.bar-in { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px 20px; padding-top: 12px; }
+.bar-actions { display: flex; align-items: center; gap: 8px; }
 .brand { display: flex; align-items: center; gap: 9px; font: 800 20.9px/1 var(--display); letter-spacing: -.02em; }
 .lamp { width: 10px; height: 10px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
-.tabs { display: flex; gap: 2px; flex-wrap: wrap; }
+.tabs { grid-column: 1 / -1; display: flex; gap: 22px; overflow-x: auto; scrollbar-width: none; border-top: 1px solid var(--line); }
 .tab {
-  border: 0; background: none; padding: 7px 11px; border-radius: 6px; cursor: pointer;
-  font-weight: 600; color: var(--muted);
+  border: 0; border-bottom: 3px solid transparent; background: none; padding: 9px 0 7px; cursor: pointer;
+  font-weight: 600; color: var(--muted); white-space: nowrap;
 }
-.tab:hover { color: var(--ink); background: var(--paper); }
-.tab[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); }
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
 .tab .n { font: 500 13.2px var(--mono); margin-left: 3px; }
-.search { margin-left: auto; flex: 1 1 200px; max-width: 300px; }
+#tab-agenda { margin-left: auto; }
+#tab-speakers { align-self: center; margin-block: 4px; padding: 4px 12px; border: 2px solid var(--accent); border-radius: 6px; color: var(--accent); }
+#tab-speakers:hover { background: var(--accent-soft); }
+#tab-speakers[aria-selected="true"] { background: var(--accent); color: var(--sheet); }
+.search { justify-self: end; width: 100%; max-width: 340px; }
 .search input {
   width: 100%; padding: 7px 10px; background: var(--paper);
   border: 1px solid var(--line); border-radius: 6px;
 }
 
 /* opening */
-.open { padding-block: 26px 18px; display: grid; gap: 8px; }
-.open h1 {
-  margin: 0; font: 800 clamp(33px, 5.9vw, 59.4px)/1.02 var(--display); letter-spacing: -.035em;
-  text-wrap: balance; max-width: 22ch;
-}
+.open { padding-block: 20px 22px; display: grid; gap: 12px; }
+.open-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.open-card { margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0; background: var(--accent); color: var(--sheet); border-radius: 8px; padding: 18px 20px; }
+.open-kicker { align-self: flex-start; padding: 2px 8px; border-radius: 4px; background: var(--sheet); color: var(--accent); font-size: 13.5px; font-weight: 700; letter-spacing: .03em; }
+.open-title { margin: 0; font: 700 clamp(24px, 2.6vw, 30px)/1.15 var(--display); text-wrap: balance; }
+.open-title a { text-decoration: none; }
+.open-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.open-greeting { margin: -6px 0 0; font-size: 17px; }
+.open-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.open-stat { display: grid; gap: 2px; padding: 9px 10px; border: 2px solid transparent; border-radius: 6px; background: var(--sheet); color: var(--ink); text-align: left; cursor: pointer; }
+.open-stat:hover { border-color: var(--ink); }
+.open-stat b { font: 700 28px/1 var(--display); color: var(--accent); }
+.open-stat span { font-size: 15px; line-height: 1.2; }
+.open-stat.gap b { color: #5b2a86; }
+.open-stat.gap:hover { border-color: #5b2a86; }
+.open-next { margin: 0; font-size: 16.5px; line-height: 1.35; }
+.open-text { margin: 0; font-size: 17px; line-height: 1.4; }
+.open-more { align-self: flex-start; margin-top: auto; font-size: 16.5px; font-weight: 700; text-underline-offset: 3px; }
+@media (max-width: 760px) { .open-grid { grid-template-columns: minmax(0, 1fr); } }
 .tally { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--muted); font: 400 14.3px var(--mono); }
 .tally b { color: var(--ink); font-weight: 500; }
 .stale { padding: 9px 12px; background: var(--signal-soft); color: var(--ink); border-radius: 6px; }
@@ -122,7 +141,11 @@ section + section { margin-top: 32px; }
 .act.quiet { border-color: transparent; background: none; color: var(--muted); font-weight: 500; }
 .act:disabled { opacity: .65; cursor: wait; }
 .act:disabled:hover { border-color: var(--line); color: var(--ink); }
-.refresh { padding: 7px 11px; border-radius: 6px; white-space: nowrap; }
+.refresh { padding: 7px 12px; border-radius: 6px; white-space: nowrap; }
+#refresh { background: var(--accent); border-color: var(--accent); color: var(--sheet); }
+#refresh:hover { background: var(--signal); border-color: var(--signal); color: var(--sheet); }
+#refresh:disabled, #refresh:disabled:hover { background: var(--accent); border-color: var(--accent); color: var(--sheet); }
+#bnr-toggle.on, #bnr-toggle.on:hover { background: var(--ink); border-color: var(--ink); color: var(--sheet); }
 .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
 /* must-read stories: the full width of the page, three per row */
@@ -144,7 +167,7 @@ section + section { margin-top: 32px; }
 .agenda-table td { padding: 8px 10px 8px 0; vertical-align: top; border-bottom: 1px solid var(--line); }
 .agenda-table .nowrap { white-space: nowrap; }
 .agenda-days { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; margin-bottom: 24px; }
-.agenda-day { background: var(--sheet); border: 1px solid var(--line); border-top: 3px solid var(--signal); border-radius: 8px; padding: 14px 15px; min-width: 0; }
+.agenda-day { margin: 0; background: var(--sheet); border: 1px solid var(--line); border-top: 3px solid var(--signal); border-radius: 8px; padding: 14px 15px; min-width: 0; }
 .agenda-day h2 { margin: 0 0 2px; font: 700 22px/1.2 var(--display); }
 .agenda-day .when-long { color: var(--muted); font-size: 14.3px; }
 .theme-group { margin-top: 15px; }
@@ -161,6 +184,36 @@ section + section { margin-top: 32px; }
 .agenda-item a:hover { color: var(--accent); text-decoration: underline; }
 .agenda-item small { display: block; color: var(--muted); font-size: 13.8px; }
 @media (max-width: 760px) { .agenda-days { grid-template-columns: minmax(0, 1fr); } }
+
+/* speakers: large and page-filling, with the form as the main event */
+.speakers { padding: 8px 0 56px; }
+.speakers-hero { font: 800 clamp(28px, 3.6vw, 40px)/1.08 var(--display); letter-spacing: -.01em; margin: 0 0 4px; }
+.speakers-hero em { font-style: italic; color: var(--accent); }
+.speakers-lead { font-size: 18px; line-height: 1.35; color: var(--muted); margin: 0 0 18px; max-width: 42em; }
+.speakers-grid { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.speakers-form { background: var(--sheet); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 8px; padding: 20px; display: grid; gap: 16px; }
+.speaker-step { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; font-size: 19px; font-weight: 700; color: var(--ink); align-items: baseline; }
+.speaker-step .num { grid-row: span 3; font: 800 32px/1 var(--display); color: var(--accent); }
+.speaker-step .hint { font-size: 16px; font-weight: 400; color: var(--muted); }
+.speaker-step textarea, .speaker-step input { width: 100%; margin-top: 6px; padding: 10px 12px; font-size: 17.5px; line-height: 1.35; font-weight: 400; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); }
+.speaker-step textarea { resize: vertical; }
+.speaker-formats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.speaker-formats .term { font-size: 15.5px; font-weight: 400; padding: 3px 9px; }
+#speaker-subject { min-height: 110px; }
+#speaker-angle { min-height: 80px; }
+.speaker-go { width: 100%; padding: 12px 18px; border: 0; border-radius: 6px; background: var(--accent); color: var(--sheet); font: 700 20px var(--display); cursor: pointer; }
+.speaker-go:hover { background: var(--signal); }
+.speaker-copy { justify-self: center; background: none; border: 0; color: var(--accent); font-size: 16px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.speakers-side { background: var(--accent); color: var(--sheet); border-radius: 8px; padding: 18px; }
+.speakers-side h3 { margin: 0 0 12px; font: 700 21px/1.15 var(--display); }
+.speakers-side ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 16.5px; line-height: 1.25; }
+.speakers-side li { display: grid; grid-template-columns: 20px minmax(0, 1fr); }
+.speakers-side li::before { content: "✓"; font-weight: 700; }
+.speakers-warning { margin: 14px 0 0; padding-top: 10px; border-top: 1px solid currentColor; font-size: 14.5px; line-height: 1.3; }
+.speaker-prompt { margin-top: 18px; background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; }
+.speaker-prompt summary { cursor: pointer; font: 700 17px var(--display); }
+.speaker-prompt .copybox { min-height: 300px; font-size: 15.5px; line-height: 1.35; }
+@media (max-width: 880px) { .speakers-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* coverage meter: one tick per outlet, Dutch and international split */
 .cover { display: flex; gap: 2px; align-items: center; margin-top: 11px; flex-wrap: wrap; }
@@ -227,25 +280,30 @@ section + section { margin-top: 32px; }
 
 @media (max-width: 880px) {
   .grid { grid-template-columns: minmax(0, 1fr); }
-  .search { max-width: none; margin-left: 0; flex-basis: 100%; order: 1; }
+  .bar-in { grid-template-columns: minmax(0, 1fr) auto; }
+  .search { grid-column: 1 / -1; grid-row: 2; max-width: none; justify-self: stretch; }
 }
 @media (max-width: 480px) {
   .row { grid-template-columns: minmax(0, 1fr); }
-  .tab { padding: 6px 8px; }
+  .tabs { gap: 16px; }
 }
 </style>
 
 <header class="bar"><div class="wrap bar-in">
   <div class="brand"><span class="lamp" aria-hidden="true"></span>Sjoernalistieke Bot</div>
+  <div class="search"><input id="q" type="search" placeholder="Zoek in koppen en bronnen" aria-label="Zoek in koppen en bronnen"></div>
+  <div class="bar-actions">
+    <button class="act refresh" id="bnr-toggle" type="button" aria-pressed="false" title="Aan: toon BNR-labels en gebruik BNR in de sprekersprompt">BNR-actief</button>
+    <button class="act refresh" id="refresh" type="button">Ververs</button>
+  </div>
   <div class="tabs" role="tablist" aria-label="Onderdelen">
     <button class="tab" role="tab" id="tab-news" data-view="news">Actualiteit</button>
     <button class="tab" role="tab" id="tab-research" data-view="research">Onderzoek</button>
     <button class="tab" role="tab" id="tab-science" data-view="science">Wetenschap</button>
     <button class="tab" role="tab" id="tab-agenda" data-view="agenda">Agenda</button>
-    <button class="tab" role="tab" id="tab-ideas" data-view="ideas">Mijn voorzetten<span class="n" id="idea-count"></span></button>
+    <button class="tab" role="tab" id="tab-ideas" data-view="ideas">Leeslijst<span class="n" id="idea-count"></span></button>
+    <button class="tab" role="tab" id="tab-speakers" data-view="speakers">Sprekers</button>
   </div>
-  <div class="search"><input id="q" type="search" placeholder="Zoek in koppen en bronnen" aria-label="Zoek in koppen en bronnen"></div>
-  <button class="act refresh" id="refresh" type="button">Ververs</button>
 </div></header>
 
 <main class="wrap">
@@ -316,9 +374,11 @@ const isNew = (iso) => !!iso && new Date(iso).getTime() > newSince;
 const norm = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /* ---------- state ---------- */
-const VIEWS = ["news", "research", "science", "agenda", "ideas"];
+const VIEWS = ["news", "research", "science", "agenda", "ideas", "speakers"];
 let view = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "news";
 let query = "", term = null, region = null, showGeneral = false;
+const BNR_KEY = "vd.bnrActive";
+let bnrActive = store.get(BNR_KEY, false) === true;   /* off by default: remembered per browser */
 const expanded = new Set();
 
 const OUTLETS = DATA.news.outlets, PLATFORMS = DATA.research.platforms, ITEMS = DATA.research.items;
@@ -336,10 +396,10 @@ function saveIdeas() {
 function toggleIdea(a, button) {
   if (hasIdea(a.link)) {
     ideas = ideas.filter((i) => i.link !== a.link);
-    toast("Verwijderd uit je voorzetten");
+    toast("Verwijderd uit je leeslijst");
   } else {
     ideas.unshift({ link: a.link, title: a.titleNl || a.title, original: a.titleNl ? a.title : "", source: a.source, language: a.language || "", published: a.published || null, status: "Idee", note: "" });
-    toast("Bewaard bij je voorzetten");
+    toast("Bewaard in je leeslijst");
   }
   saveIdeas();
   if (button) { const on = hasIdea(a.link); button.classList.toggle("on", on); button.textContent = on ? "Bewaard" : "Bewaar"; button.setAttribute("aria-pressed", on); }
@@ -417,17 +477,60 @@ async function refreshPage() {
 }
 
 /* ---------- views ---------- */
+function greeting() {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", hourCycle: "h23" }).format(new Date()));
+  return hour < 6 ? "Goedenacht" : hour < 12 ? "Goedemorgen" : hour < 18 ? "Goedemiddag" : "Goedenavond";
+}
+
+function goTo(target, selector) {
+  view = target;
+  try { history.replaceState(null, "", "#" + view); } catch (e) {}
+  renderView();
+  const place = selector && document.querySelector(selector);
+  if (place) place.scrollIntoView({ block: "start" });
+  else window.scrollTo(0, 0);
+  if (place) window.scrollBy(0, -document.querySelector(".bar").offsetHeight - 10);
+}
+
+function dayOpening() {
+  const today = isoDay(new Date());
+  const clock = fmt({ hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date());
+  const planned = AGENDA.events.filter((e) => e.date === today);
+  const next = planned.find((e) => e.time && e.time >= clock && themeIsOpen(e.theme));
+  const purple = new Set([...DATA.news.onmisbaar, ...OUTLETS.flatMap((o) => o.articles)].filter((a) => a.notInDutch).map((a) => a.title)).size;
+  const stories = DATA.news.onmisbaar.length;
+  const stat = (number, label, onclick, cls) => h("button", { class: "open-stat" + (cls ? " " + cls : ""), type: "button", onclick }, h("b", null, number), h("span", null, label));
+  const date = fmt({ weekday: "long", day: "numeric", month: "long" }).format(new Date());
+  return h("section", { class: "open-card" },
+    h("div", { class: "open-kicker" }, "Sjoernalistieke Bot"),
+    h("h1", { class: "open-title" }, date.charAt(0).toUpperCase() + date.slice(1)),
+    h("p", { class: "open-greeting" }, `${greeting()}. Dit staat er vandaag klaar:`),
+    h("div", { class: "open-stats" },
+      stat(stories, stories === 1 ? "onmisbaar verhaal" : "onmisbare verhalen", () => goTo("news", ".must")),
+      stat(planned.length, planned.length === 1 ? "punt op de agenda" : "punten op de agenda", () => goTo("agenda")),
+      stat(purple, "mogelijk nog niet in NL", () => goTo("news", ".chip.gap"), "gap")),
+    next && h("p", { class: "open-next" }, h("b", null, `Volgende om ${next.time}: `), `${next.title} (${next.source})`));
+}
+
+function wekdienstCard() {
+  const w = DATA.news.wekdienst;
+  return h("section", { class: "open-card nos" },
+    h("div", { class: "open-kicker" }, "NOS Wekdienst"),
+    w ? h("h2", { class: "open-title" }, ext(w.link, w.title)) : h("h2", { class: "open-title" }, "Nog niet verschenen"),
+    w && w.snippet ? h("p", { class: "open-text" }, w.snippet)
+      : !w && h("p", { class: "open-text" }, "De Wekdienst van vandaag is nog niet gevonden. De NOS publiceert hem in de ochtend."),
+    ext(w ? w.link : "https://nos.nl/nieuws/laatste", w ? "Lees de Wekdienst bij de NOS →" : "Naar het laatste nieuws bij de NOS →", "open-more"));
+}
+
 function renderOpen() {
   const generated = new Date(DATA.generated);
-  const title = fmt({ weekday: "long", day: "numeric", month: "long" }).format(generated);
   const okO = OUTLETS.filter((o) => o.ok).length, okP = PLATFORMS.filter((p) => p.ok).length;
   const fresh = OUTLETS.flatMap((o) => o.articles).concat(ITEMS).filter((a) => isNew(a.published)).length;
   const hours = (Date.now() - generated) / 3600000;
   document.getElementById("open").replaceChildren(...[
-    h("h1", null, title.charAt(0).toUpperCase() + title.slice(1)),
+    h("div", { class: "open-grid" }, dayOpening(), wekdienstCard()),
     h("div", { class: "tally" },
       h("span", null, "opgehaald ", h("b", null, fmt({ hour: "2-digit", minute: "2-digit" }).format(generated))),
-      h("span", null, h("b", null, DATA.news.onmisbaar.length), " onmisbaar"),
       h("span", null, h("b", null, fresh), previousVisit ? " nieuw sinds je vorige bezoek" : " van de laatste 24 uur"),
       h("span", null, h("b", null, `${okO}/${OUTLETS.length}`), " media"),
       h("span", null, h("b", null, `${okP}/${PLATFORMS.length}`), " onderzoeksplatforms")),
@@ -458,7 +561,7 @@ function renderNews() {
         h("h3", { class: "head" }, s.title),
         coverage(s.members),
         h("div", { class: "meta" },
-          h("span", { class: "chip" + (inBnr ? " ok" : "") }, inBnr ? "Staat bij BNR" : "Niet in BNR-koppen"),
+          bnrActive && h("span", { class: "chip" + (inBnr ? " ok" : "") }, inBnr ? "Staat bij BNR" : "Niet in BNR-koppen"),
           notInDutchChip(s),
           s.members.map((m) => ext(m.link, m.source))),
         h("div", { class: "acts" }, saveButton({ link: first.link, title: s.title, source: first.source })));
@@ -492,10 +595,7 @@ function renderNews() {
     })) : h("p", { class: "snip" }, "Niets gevonden. Pas je zoekopdracht aan."),
   ));
 
-  const w = DATA.news.wekdienst;
   const rail = [
-    w && h("section", null, h("h2", { class: "eyebrow" }, "NOS Wekdienst"),
-      h("div", { class: "card wek" }, ext(w.link, w.title), w.snippet && h("p", { class: "snip" }, w.snippet))),
     DATA.news.trending.length && h("section", null, h("h2", { class: "eyebrow" }, "Veelgenoemd"),
       h("div", { class: "terms" }, DATA.news.trending.slice(0, 24).map((t) =>
         h("button", { class: "term", type: "button", "aria-pressed": term === t.term ? "true" : "false",
@@ -640,7 +740,7 @@ function agendaColumn(label, day) {
     themes.length ? themes.map((theme) => {
       const inTheme = events.filter((e) => e.theme === theme);
       return h("details", { class: "theme-group", open: themeIsOpen(theme),
-          ontoggle: (ev) => { if (themeIsOpen(theme) !== ev.target.open) { themeState[theme] = ev.target.open; store.set(THEME_STATE_KEY, themeState); } } },
+          ontoggle: (ev) => { if (themeIsOpen(theme) !== ev.target.open) { themeState[theme] = ev.target.open; store.set(THEME_STATE_KEY, themeState); renderOpen(); } } },
         h("summary", { class: "theme-name" }, h("span", { class: "label" }, theme), h("span", null, inTheme.length)),
         inTheme.map((e) => h("div", { class: "agenda-item" },
           h("span", { class: "clock" }, e.time || "–"),
@@ -688,10 +788,101 @@ function renderAgenda() {
     h("p", { class: "note" }, "Bedrijfscijfers, zaken bij Nederlandse rechtbanken en persconferenties staan hier nog niet in."));
 }
 
+/* ---------- speakers: builds a research prompt here, the search itself happens at Perplexity ---------- */
+const PERPLEXITY_URL = "https://www.perplexity.ai/";
+const MAX_PREFILLED_URL = 4000;    /* longer prompts are too long for a link, so those are pasted by hand */
+let speakerSubject = "", speakerAngle = "", speakerFormat = "";
+const SPEAKER_FORMATS = ["Live radio-interview", "Vooropgenomen radio-item", "Tv-talkshow", "Tv-reportage", "Podcast", "Debat", "Geschreven interview", "Achtergrondgesprek"];
+
+function speakerPrompt(subject, angle, format) {
+  return [
+    (bnrActive ? "Je bent researcher bij BNR Nieuwsradio." : "Je bent researcher voor een Nederlandse journalist.") + " Zoek minstens 5 Nederlandse sprekers die we voor radio of tv kunnen benaderen over het onderwerp hieronder.",
+    "",
+    `Onderwerp, artikel of link:\n${subject}`,
+    angle ? `\nOnze insteek:\n${angle}` : "\nOnze insteek: niet opgegeven. Bepaal wat de nieuwswaardige kern is en vermeld die bovenaan.",
+    format ? `\nHet format:\n${format}\nKies sprekers die bij dit format passen. Leg per persoon kort uit waarom die daar geschikt voor is, of waar het risico zit.` : "",
+    "",
+    "Eisen:",
+    "1. Alleen mensen die in het Nederlands het gesprek kunnen voeren en in Nederland werken of daar sterk aan verbonden zijn.",
+    "2. Geef voorrang aan mensen met aantoonbare radio- of tv-ervaring. Noem per persoon een concreet optreden met programma en datum, of schrijf \"geen optreden gevonden\".",
+    "3. Kijk wat elke persoon recent over dit onderwerp heeft geschreven of gezegd, bij voorkeur uit de laatste 24 maanden. Noem per persoon minstens één publicatie, opiniestuk of interview met titel en datum.",
+    "4. Leg per persoon in één zin uit wat die kan toevoegen aan onze insteek, en welk standpunt die inneemt als dat uit de bronnen blijkt.",
+    "5. Noem huidige functie en werkgever, en belangen die een rol kunnen spelen, zoals een politieke functie, opdrachtgever of lobby.",
+    "6. Zoek variatie in invalshoek, en vermeld als alle gevonden sprekers dezelfde kant op wijzen.",
+    "",
+    "Betrouwbaarheid:",
+    "- Geef bij elk feit een bronlink. Wat je niet kunt onderbouwen, laat je weg. Verzin geen namen, functies, optredens of publicaties.",
+    "- Controleer of de persoon nog in deze functie werkt en nog leeft, en meld het als dat onduidelijk is.",
+    "- Is een opgegeven link niet leesbaar, bijvoorbeeld door een betaalmuur, zeg dat dan en werk alleen met wat wel vaststaat.",
+    "- Vind je minder dan 5 geschikte mensen, zeg dat dan eerlijk in plaats van de lijst aan te vullen.",
+    "- Zoek per persoon actief naar telefoonnummer en e-mailadres, en anders naar de persvoorlichting of werkpagina. Geef bij elk gegeven de bronlink. Verzin of raad nooit een nummer of adres, schrijf dan \"niet gevonden\".",
+    "",
+    "Geef het resultaat als tabel met deze kolommen, de best passende spreker bovenaan: naam | functie en werkgever | waarom geschikt voor onze insteek | radio- of tv-ervaring | recente publicatie | belangen | telefoon en e-mail | bronnen.",
+    "Sluit af met twee kritische vragen die we elke spreker kunnen stellen.",
+  ].join("\n");
+}
+
+function renderSpeakers() {
+  const preview = h("textarea", { class: "copybox", id: "speaker-prompt", "aria-label": "De prompt voor Perplexity", readonly: true });
+  const refreshPreview = () => { preview.value = speakerSubject.trim() ? speakerPrompt(speakerSubject.trim(), speakerAngle.trim(), speakerFormat.trim()) : ""; };
+  refreshPreview();
+  const promptBox = h("details", { class: "speaker-prompt" }, h("summary", null, "Bekijk de prompt"), preview);
+  const copyPrompt = () => {
+    const done = navigator.clipboard ? navigator.clipboard.writeText(preview.value) : Promise.reject();
+    return done.catch(() => { promptBox.open = true; preview.focus(); preview.select(); throw new Error("copy blocked"); });
+  };
+  const search = () => {
+    if (!preview.value) { toast("Vul eerst een artikel of onderwerp in."); return; }
+    const encoded = encodeURIComponent(preview.value);
+    const prefilled = encoded.length <= MAX_PREFILLED_URL;
+    const copied = copyPrompt();     /* started first, because the new tab takes the focus away from this page */
+    window.open(prefilled ? `${PERPLEXITY_URL}search?q=${encoded}` : PERPLEXITY_URL, "_blank", "noopener");
+    copied.then(() => toast(prefilled ? "Perplexity geopend. De prompt staat ook op je klembord." : "Lange prompt gekopieerd. Plak hem in Perplexity met Cmd+V.", 7000),
+      () => toast("Kopiëren werd geblokkeerd. Selecteer de prompt hieronder.", 7000));
+  };
+  const copyOnly = () => {
+    if (!preview.value) { toast("Vul eerst een artikel of onderwerp in."); return; }
+    copyPrompt().then(() => toast("Prompt gekopieerd"), () => toast("Kopiëren werd geblokkeerd. Selecteer de prompt hieronder.", 7000));
+  };
+  const formatInput = h("input", { id: "speaker-format", type: "text", placeholder: "Bijvoorbeeld: live radio-interview van 8 minuten", value: speakerFormat,
+    oninput: (e) => { speakerFormat = e.target.value; refreshPreview(); markFormat(); } });
+  const formatChoices = SPEAKER_FORMATS.map((f) => h("button", { class: "term", type: "button", "aria-pressed": speakerFormat === f ? "true" : "false",
+    onclick: () => { speakerFormat = speakerFormat === f ? "" : f; formatInput.value = speakerFormat; refreshPreview(); markFormat(); } }, f));
+  const markFormat = () => formatChoices.forEach((b, i) => b.setAttribute("aria-pressed", speakerFormat === SPEAKER_FORMATS[i] ? "true" : "false"));
+  const promises = ["Minstens 5 Nederlandse sprekers", "Radio- en tv-ervaring eerst", "Wat ze recent schreven of zeiden", "Belangen en standpunten in beeld", "Een bronlink bij elk feit", "Telefoonnummer en e-mailadres"];
+  return h("section", { class: "speakers" },
+    h("h2", { class: "speakers-hero" }, "Wie bel je ", h("em", null, "hierover?")),
+    h("p", { class: "speakers-lead" }, "Gooi je artikel erin, vertel je insteek en krijg een lijst met sprekers die je kunt benaderen."),
+    h("div", { class: "speakers-grid" },
+      h("div", { class: "speakers-form" },
+        h("label", { class: "speaker-step", for: "speaker-subject" },
+          h("span", { class: "num", "aria-hidden": "true" }, "1"),
+          h("span", null, "Je artikel of onderwerp"),
+          h("span", { class: "hint" }, "Plak een link, de tekst of één onderwerp."),
+          h("textarea", { id: "speaker-subject", placeholder: "Bijvoorbeeld: Servië", value: speakerSubject, oninput: (e) => { speakerSubject = e.target.value; refreshPreview(); } })),
+        h("label", { class: "speaker-step", for: "speaker-angle" },
+          h("span", { class: "num", "aria-hidden": "true" }, "2"),
+          h("span", null, "Jouw insteek"),
+          h("span", { class: "hint" }, "Wat wil je precies weten of laten zien?"),
+          h("textarea", { id: "speaker-angle", placeholder: "Bijvoorbeeld: wat betekenen de protesten voor de toetreding tot de EU?", value: speakerAngle, oninput: (e) => { speakerAngle = e.target.value; refreshPreview(); } })),
+        h("div", { class: "speaker-step" },
+          h("span", { class: "num", "aria-hidden": "true" }, "3"),
+          h("label", { for: "speaker-format" }, "Wat is het format?"),
+          h("span", { class: "hint" }, "Kies er een of omschrijf het zelf."),
+          h("div", null, formatInput, h("div", { class: "speaker-formats" }, formatChoices))),
+        h("button", { class: "speaker-go", type: "button", onclick: search }, "Zoek mijn sprekers →"),
+        h("button", { class: "speaker-copy", type: "button", onclick: copyOnly }, "Alleen de prompt kopiëren")),
+      h("aside", { class: "speakers-side" },
+        h("h3", null, "Dit vraagt de bot altijd"),
+        h("ul", null, promises.map((p) => h("li", null, h("span", null, p)))),
+        h("p", { class: "speakers-warning" }, "Perplexity doet de zoekopdracht en kan fouten maken. Controleer elke naam en bron. Plak geen vertrouwelijke informatie, want wat je invult gaat naar Perplexity."))),
+    promptBox);
+}
+
 function renderIdeas() {
   if (!ideas.length) {
     return h("div", { class: "empty" },
-      h("h2", null, "Nog geen voorzetten"),
+      h("h2", null, "Je leeslijst is nog leeg"),
       h("p", null, "Klik bij een kop op Bewaar. Hier houd je per verhaal je status en aantekeningen bij, en kopieer je het als voorstel voor de redactie."));
   }
   const list = ideas.filter((i) => matches(i.title, i.source, i.note));
@@ -707,7 +898,7 @@ function renderIdeas() {
   };
   return h("section", { style: "padding-bottom:56px" },
     h("div", { class: "pitch-top", style: "margin-bottom:12px" },
-      h("h2", { class: "eyebrow", style: "margin:0" }, "Mijn voorzetten"),
+      h("h2", { class: "eyebrow", style: "margin:0" }, "Leeslijst"),
       h("button", { class: "act", type: "button", onclick: copy }, "Kopieer als voorstel")),
     box,
     h("p", { class: "note", style: "margin:0 0 12px" }, "Je selectie en aantekeningen staan alleen in deze browser. Ze gaan niet mee naar GitHub of een ander apparaat."),
@@ -726,7 +917,7 @@ function renderIdeas() {
 
 function renderView() {
   for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", t.dataset.view === view ? "true" : "false");
-  const content = view === "news" ? renderNews() : view === "research" ? renderResearch() : view === "science" ? renderScience() : view === "agenda" ? renderAgenda() : renderIdeas();
+  const content = view === "news" ? renderNews() : view === "research" ? renderResearch() : view === "science" ? renderScience() : view === "agenda" ? renderAgenda() : view === "speakers" ? renderSpeakers() : renderIdeas();
   document.getElementById("view").replaceChildren(content);
 }
 
@@ -744,8 +935,20 @@ document.getElementById("q").addEventListener("input", (e) => { query = norm(e.t
 document.addEventListener("keydown", (e) => {
   if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); document.getElementById("q").focus(); }
 });
-document.getElementById("foot").textContent =
-  "Koppen linken naar de originele artikelen; sommige zitten achter een betaalmuur. “Niet in BNR-koppen”, “Mogelijk ook bij” en “Mogelijk meerdere platforms” zijn automatische vergelijkingen van woorden in de opgehaalde koppen. Controleer ze voordat je erop afgaat. Anderstalige koppen zijn automatisch vertaald met MyMemory en kunnen fouten bevatten; de originele kop staat eronder.";
+function renderBnrState() {
+  const button = document.getElementById("bnr-toggle");
+  button.classList.toggle("on", bnrActive);
+  button.setAttribute("aria-pressed", bnrActive ? "true" : "false");
+  document.getElementById("foot").textContent =
+    `Koppen linken naar de originele artikelen; sommige zitten achter een betaalmuur. ${bnrActive ? "“Niet in BNR-koppen”, " : ""}“Mogelijk ook bij” en “Mogelijk meerdere platforms” zijn automatische vergelijkingen van woorden in de opgehaalde koppen. Controleer ze voordat je erop afgaat. Anderstalige koppen zijn automatisch vertaald met MyMemory en kunnen fouten bevatten; de originele kop staat eronder.`;
+}
+document.getElementById("bnr-toggle").addEventListener("click", () => {
+  bnrActive = !bnrActive;
+  store.set(BNR_KEY, bnrActive);
+  renderBnrState();
+  renderView();
+});
+renderBnrState();
 document.getElementById("idea-count").textContent = ideas.length ? " " + ideas.length : "";
 renderOpen();
 renderView();
