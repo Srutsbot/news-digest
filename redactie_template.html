@@ -917,6 +917,7 @@ function renderIdeas() {
 
 function renderView() {
   for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", t.dataset.view === view ? "true" : "false");
+  document.getElementById("open").style.display = view === "news" ? "" : "none";   /* the opening belongs to the news tab */
   const content = view === "news" ? renderNews() : view === "research" ? renderResearch() : view === "science" ? renderScience() : view === "agenda" ? renderAgenda() : view === "speakers" ? renderSpeakers() : renderIdeas();
   document.getElementById("view").replaceChildren(content);
 }
