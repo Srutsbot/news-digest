@@ -203,11 +203,38 @@ def add_translations(items: list[dict]) -> None:
     print(f"[info] translated {done} of {len(todo)} foreign-language headlines", file=sys.stderr)
 
 
-def news_item(article: dict, trending: dict[str, int]) -> dict:
+# Repeats in the news: the same story at other outlets. Names like these are in too many stories to prove a match.
+NEWS_COMMON_WORDS = digest.GENERIC_TERMS | {"trump", "donald", "kabinet", "minister", "premier", "miljoen", "miljard"}
+NEWS_RARE_WORD = 3           # a word in at most this many headlines is rare enough to identify a story
+
+
+def news_words(article: dict) -> set[str]:
+    return article["tok"] - NEWS_COMMON_WORDS
+
+
+def same_news_story(a: dict, b: dict, word_counts: Counter) -> bool:
+    """Other outlets only: three shared words, or two that hardly appear elsewhere."""
+    if a["source"] == b["source"] or a["title"] == b["title"]:
+        return False
+    shared = news_words(a) & news_words(b)
+    return len(shared) >= 3 or (len(shared) == 2 and all(word_counts[w] <= NEWS_RARE_WORD for w in shared))
+
+
+def news_repeat(article: dict, pool: list[dict], word_counts: Counter) -> dict | None:
+    others = {b["title"]: b for b in pool if same_news_story(article, b, word_counts)}
+    if not others:
+        return None
+    group = [article, *others.values()]
+    return {"count": len(group), "days": len({a["published"].date() for a in group if a.get("published")}),
+            "mentions": mentions(others.values())}
+
+
+def news_item(article: dict, trending: dict[str, int], pool: list[dict], word_counts: Counter) -> dict:
     return {
         "title": article["title"], "link": article["link"], "snippet": article.get("snippet", ""),
         "published": iso(article.get("published")),
         "terms": sorted(article.get("tok", set()) & trending.keys(), key=lambda t: (-trending[t], t)),
+        "repeat": news_repeat(article, pool, word_counts),
     }
 
 
@@ -237,6 +264,8 @@ def build_news() -> dict:
     trending = digest.trending_terms(candidates)
     stories = digest.find_onmisbaar(candidates, max_clusters=MAX_MUST_READ_STORIES)
     in_box = {id(a) for story in stories for a in story["members"]}
+    pool = [a for articles in candidates.values() for a in articles]
+    word_counts = Counter(word for a in pool for word in news_words(a))
     return {
         "wekdienst": digest.fetch_wekdienst(),
         "onmisbaar": [{
@@ -247,7 +276,7 @@ def build_news() -> dict:
         "outlets": [{
             "name": name,
             "ok": bool(fetched[name]),
-            "articles": [news_item(a, trending) for a in articles if id(a) not in in_box],
+            "articles": [news_item(a, trending, pool, word_counts) for a in articles if id(a) not in in_box],
         } for name, articles in candidates.items()],
         "opinion": [{"source": a["source"], "title": a["title"], "link": a["link"]}
                     for a in digest.select_opinion(opinion_pool, trending)],
@@ -346,7 +375,7 @@ def same_science_story(a: dict, b: dict, word_counts: Counter) -> bool:
 
 def mentions(articles) -> list[dict]:
     """Where else something appeared, newest first, so the reader can open those pieces."""
-    newest = sorted(articles, key=lambda a: a["published"], reverse=True)[:MAX_MENTIONS]
+    newest = sorted(articles, key=lambda a: a["published"] or onderzoek.EPOCH, reverse=True)[:MAX_MENTIONS]
     return [{"source": a["source"], "title": a["title"], "link": a["link"], "published": iso(a["published"])} for a in newest]
 
 
@@ -500,8 +529,9 @@ def mark_not_in_dutch(news: dict, candidates: dict[str, list[dict]]) -> None:
     with ThreadPoolExecutor(3) as pool:
         answers = dict(zip(titles, pool.map(lambda title: seems_not_in_dutch(title, dutch_headlines), titles)))
     for entry in foreign_items + foreign_stories:
-        entry["notInDutch"] = answers[entry["title"]]
-    marked = sum(answers.values())
+        repeat_sources = {m["source"] for m in (entry.get("repeat") or {}).get("mentions", [])}
+        entry["notInDutch"] = answers[entry["title"]] and not repeat_sources & dutch_outlets
+    marked = sum(bool(entry["notInDutch"]) for entry in foreign_items + foreign_stories)
     print(f"[info] {marked} of {len(titles)} international headlines possibly not in Dutch yet", file=sys.stderr)
 
 
