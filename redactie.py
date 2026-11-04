@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Vroege Dienst: builds one self-contained web page from the digest and investigative sources.
+"""Sjoernalistieke Bot: builds one self-contained web page from the digest and investigative sources.
 
 Usage:
     python redactie.py                       # fetch everything and write docs/index.html
@@ -22,6 +22,7 @@ from pathlib import Path
 
 import requests
 
+import agenda
 import digest
 import onderzoek
 
@@ -35,6 +36,8 @@ DATA_MARKER = "/*__DATA__*/null"
 
 MAX_RESEARCH_AGE_DAYS = 14    # older investigative pieces stay out of the page
 MAX_RESEARCH_PER_PLATFORM = 8
+MAX_MUST_READ_STORIES = 9     # the page shows three rows of three; the mail keeps its own limit
+FIRST_INTERNATIONAL_OUTLET = "The Guardian (Europe)"  # digest.FEEDS lists the Dutch outlets before this one
 MIN_SHARED_WORDS = 2          # same rule as digest.py: two shared headline words = same story
 
 REGIONS = {
@@ -229,7 +232,7 @@ def build_news() -> dict:
                 opinion_pool.append(article)
 
     trending = digest.trending_terms(candidates)
-    stories = digest.find_onmisbaar(candidates)
+    stories = digest.find_onmisbaar(candidates, max_clusters=MAX_MUST_READ_STORIES)
     in_box = {id(a) for story in stories for a in story["members"]}
     return {
         "wekdienst": digest.fetch_wekdienst(),
@@ -445,8 +448,58 @@ def collect() -> dict:
     now = datetime.now(timezone.utc)
     news = build_news()
     candidates = news.pop("_candidates")
-    return {"generated": now.isoformat(), "news": news, "research": build_research(candidates, now),
-            "science": build_science(candidates, now)}
+    research = build_research(candidates, now)
+    mark_not_in_dutch(news, candidates)
+    return {"generated": now.isoformat(), "news": news, "research": research,
+            "science": build_science(candidates, now), "agenda": agenda.build_agenda(now)}
+
+
+# "Possibly not in Dutch yet": translate an international headline, look for it among the Dutch headlines
+# on the page, then search Google News Netherlands. An unsure case gets no label.
+GAP_SKIP_TITLE = re.compile(r"^(?:opinion\b|exclusive \| opinion)|\breview\b|\blive\b|^how we\b|^see how\b|\| [A-Z][\w'’. -]+$", re.I)
+GAP_SKIP_WORDS = set("""opinie exclusief zegt zeggen zeggen volgens kunnen zullen zouden hebben heeft twee drie vijf zeven
+hoe waarom wat wie een leeftijd nee binnen functionarissen duizenden""".split())
+GAP_LONGEST_WORD = 16        # longer words are usually machine-made compounds that nobody searches for
+
+
+def gap_query_words(dutch_title: str) -> list[str]:
+    words = re.findall(r"[A-Za-zÀ-ÿ0-9'’-]+", dutch_title)
+    names = [w.strip("'’-").lower() for i, w in enumerate(words) if i and w[0].isupper() and len(w) >= 3]
+    other = sorted(digest.tokens(dutch_title), key=len, reverse=True)
+    chosen = [w for w in dict.fromkeys(names + other) if w not in GAP_SKIP_WORDS and "-" not in w and len(w) <= GAP_LONGEST_WORD]
+    return chosen[:3]
+
+
+def seems_not_in_dutch(title: str, dutch_headlines: list[set[str]]) -> bool:
+    if GAP_SKIP_TITLE.search(title):
+        return False
+    translated = translate_title(title, "en")
+    if not translated or any(len(digest.tokens(translated) & known) >= MIN_SHARED_WORDS for known in dutch_headlines):
+        return False
+    words = gap_query_words(translated)
+    if len(words) < 2:
+        return False
+    for query in (words, words[:2]):
+        if digest.fetch_articles("Nederlandse dekking", digest.google_news_feed(" ".join(query) + " when:3d", "nl", "NL")):
+            return False
+    return True
+
+
+def mark_not_in_dutch(news: dict, candidates: dict[str, list[dict]]) -> None:
+    """Runs after the translations of the research section, which matter more if the daily limit is reached."""
+    names = list(candidates)
+    first_foreign = names.index(FIRST_INTERNATIONAL_OUTLET)
+    dutch_outlets = set(names[:first_foreign])
+    dutch_headlines = [a["tok"] for name in names[:first_foreign] for a in candidates[name]]
+    foreign_items = [a for outlet in news["outlets"] if outlet["name"] not in dutch_outlets for a in outlet["articles"]]
+    foreign_stories = [s for s in news["onmisbaar"] if not any(m["source"] in dutch_outlets for m in s["members"])]
+    titles = list(dict.fromkeys([a["title"] for a in foreign_items] + [s["title"] for s in foreign_stories]))
+    with ThreadPoolExecutor(3) as pool:
+        answers = dict(zip(titles, pool.map(lambda title: seems_not_in_dutch(title, dutch_headlines), titles)))
+    for entry in foreign_items + foreign_stories:
+        entry["notInDutch"] = answers[entry["title"]]
+    marked = sum(answers.values())
+    print(f"[info] {marked} of {len(titles)} international headlines possibly not in Dutch yet", file=sys.stderr)
 
 
 def strip_snippets(data: dict) -> None:
@@ -466,7 +519,8 @@ def render_fragment(data: dict) -> str:
 
 
 def render_page(data: dict) -> str:
-    return ('<!doctype html><html lang="nl"><head><meta charset="utf-8">'
+    return ('<!doctype html><html lang="nl" data-theme="light"><head><meta charset="utf-8">'
+            '<meta name="color-scheme" content="light">'
             '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
             '<meta name="robots" content="noindex">'
             f"</head><body>{render_fragment(data)}</body></html>")

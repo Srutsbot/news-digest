@@ -1,36 +1,33 @@
-<title>Vroege Dienst</title>
+<title>Sjoernalistieke Bot</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: a broadcast rundown. Time runs down a mono column on the left, the story sits beside it. */
 :root {
-  --paper: #eef1f6; --sheet: #fbfcfe; --ink: #12172b; --muted: #59617a; --line: #d3d9e6;
-  --accent: #2333c9; --accent-soft: #e0e4fb; --signal: #d9310f; --signal-soft: #fde6e0;
-  --good: #0c7a57; --good-soft: #dcf3ea;
-  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
-  --body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --paper: #f6f1e7; --sheet: #fcf9f2; --ink: #1c1a17; --muted: #665f54; --line: #ddd4c3;
+  --accent: #8f1d21; --accent-soft: #f1e0da; --signal: #a32a1f; --signal-soft: #f5e3dc;
+  --good: #3a6335; --good-soft: #e4ecd9;
+  --display: "Times New Roman", Times, serif;
+  --body: "Times New Roman", Times, serif;
+  --mono: "Times New Roman", Times, serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --paper: #0d1120; --sheet: #161b2e; --ink: #edf0fa; --muted: #9ea7c2; --line: #2b3350;
-    --accent: #9aa7ff; --accent-soft: #252c58; --signal: #ff8064; --signal-soft: #40201c;
-    --good: #62d6ad; --good-soft: #15352d;
+    --paper: #171412; --sheet: #211d1a; --ink: #f1ebdf; --muted: #aca294; --line: #3a332c;
+    --accent: #e39a93; --accent-soft: #43211f; --signal: #ef8f7f; --signal-soft: #3f221d;
+    --good: #9cc48e; --good-soft: #26331f;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #0d1120; --sheet: #161b2e; --ink: #edf0fa; --muted: #9ea7c2; --line: #2b3350;
-  --accent: #9aa7ff; --accent-soft: #252c58; --signal: #ff8064; --signal-soft: #40201c;
-  --good: #62d6ad; --good-soft: #15352d;
+  --paper: #171412; --sheet: #211d1a; --ink: #f1ebdf; --muted: #aca294; --line: #3a332c;
+  --accent: #e39a93; --accent-soft: #43211f; --signal: #ef8f7f; --signal-soft: #3f221d;
+  --good: #9cc48e; --good-soft: #26331f;
 }
 * { box-sizing: border-box; }
 body {
   margin: 0; background: var(--paper); color: var(--ink);
-  font: 400 15px/1.5 var(--body);
+  font: 400 16.5px/1.5 var(--body);
 }
 body::before {
   content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
@@ -52,7 +49,7 @@ button, select, input, textarea { font: inherit; color: inherit; }
   background: var(--sheet); border-bottom: 1px solid var(--line);
 }
 .bar-in { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding-block: 10px; }
-.brand { display: flex; align-items: center; gap: 9px; font: 800 19px/1 var(--display); letter-spacing: -.02em; }
+.brand { display: flex; align-items: center; gap: 9px; font: 800 20.9px/1 var(--display); letter-spacing: -.02em; }
 .lamp { width: 10px; height: 10px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
 .tabs { display: flex; gap: 2px; flex-wrap: wrap; }
 .tab {
@@ -61,7 +58,7 @@ button, select, input, textarea { font: inherit; color: inherit; }
 }
 .tab:hover { color: var(--ink); background: var(--paper); }
 .tab[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); }
-.tab .n { font: 500 12px var(--mono); margin-left: 3px; }
+.tab .n { font: 500 13.2px var(--mono); margin-left: 3px; }
 .search { margin-left: auto; flex: 1 1 200px; max-width: 300px; }
 .search input {
   width: 100%; padding: 7px 10px; background: var(--paper);
@@ -71,17 +68,17 @@ button, select, input, textarea { font: inherit; color: inherit; }
 /* opening */
 .open { padding-block: 26px 18px; display: grid; gap: 8px; }
 .open h1 {
-  margin: 0; font: 800 clamp(30px, 5.4vw, 54px)/1.02 var(--display); letter-spacing: -.035em;
+  margin: 0; font: 800 clamp(33px, 5.9vw, 59.4px)/1.02 var(--display); letter-spacing: -.035em;
   text-wrap: balance; max-width: 22ch;
 }
-.tally { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--muted); font: 400 13px var(--mono); }
+.tally { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--muted); font: 400 14.3px var(--mono); }
 .tally b { color: var(--ink); font-weight: 500; }
 .stale { padding: 9px 12px; background: var(--signal-soft); color: var(--ink); border-radius: 6px; }
 
 .grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; padding-bottom: 56px; align-items: start; }
 .rail { display: grid; gap: 28px; }
 .eyebrow {
-  margin: 0 0 10px; font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  margin: 0 0 10px; font: 500 13.2px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
 }
 .eyebrow.hot { color: var(--signal); }
 section + section { margin-top: 32px; }
@@ -91,33 +88,34 @@ section + section { margin-top: 32px; }
 .row { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 4px 14px; padding: 15px 16px; }
 .row + .row { border-top: 1px solid var(--line); }
 .row.repeat { box-shadow: inset 3px 0 0 var(--signal); }
-.seen { margin-top: 10px; padding: 8px 10px; background: var(--signal-soft); border-radius: 6px; font-size: 13px; }
+.seen { margin-top: 10px; padding: 8px 10px; background: var(--signal-soft); border-radius: 6px; font-size: 14.3px; }
 .seen-h, .seen summary { font-weight: 600; }
 .seen summary { cursor: pointer; }
 .seen ul { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 5px; }
 .seen li { overflow-wrap: anywhere; }
-.seen .when { font: 400 12px var(--mono); color: var(--muted); margin-right: 6px; }
+.seen .when { font: 400 13.2px var(--mono); color: var(--muted); margin-right: 6px; }
 .seen a { text-underline-offset: 2px; }
-.slug { font: 500 12px/1.75 var(--mono); color: var(--muted); }
-.head { margin: 0; font: 700 19px/1.2 var(--display); letter-spacing: -.012em; text-wrap: pretty; }
-.head.sm { font-size: 16.5px; }
+.slug { font: 500 13.2px/1.75 var(--mono); color: var(--muted); }
+.head { margin: 0; font: 700 20.9px/1.2 var(--display); letter-spacing: -.012em; text-wrap: pretty; }
+.head.sm { font-size: 18.2px; }
 .head a { text-decoration: none; }
 .head a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
-.orig { margin: 4px 0 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
-.snip { margin: 5px 0 0; color: var(--muted); font-size: 14px; max-width: 65ch; overflow-wrap: anywhere; }
-.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 9px; font-size: 13px; color: var(--muted); }
+.orig { margin: 4px 0 0; color: var(--muted); font-size: 14.3px; overflow-wrap: anywhere; }
+.snip { margin: 5px 0 0; color: var(--muted); font-size: 15.4px; max-width: 65ch; overflow-wrap: anywhere; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 9px; font-size: 14.3px; color: var(--muted); }
 .meta a { color: var(--accent); text-underline-offset: 2px; }
 .src { font-weight: 600; color: var(--ink); }
 .chip {
   display: inline-block; padding: 1px 7px; border-radius: 4px;
-  font: 500 11.5px/1.6 var(--mono); background: var(--paper); color: var(--muted);
+  font: 500 12.7px/1.6 var(--mono); background: var(--paper); color: var(--muted);
 }
 .chip.new { background: var(--accent-soft); color: var(--accent); }
 .chip.hot { background: var(--signal-soft); color: var(--signal); }
 .chip.ok { background: var(--good-soft); color: var(--good); }
+.chip.gap { background: #5b2a86; color: #ffffff; }
 .act {
   border: 1px solid var(--line); background: var(--sheet); border-radius: 5px; padding: 2px 9px;
-  font-size: 13px; font-weight: 600; cursor: pointer; color: var(--ink); text-decoration: none; display: inline-block;
+  font-size: 14.3px; font-weight: 600; cursor: pointer; color: var(--ink); text-decoration: none; display: inline-block;
 }
 .act:hover { border-color: var(--accent); color: var(--accent); }
 .act.on { background: var(--accent); border-color: var(--accent); color: var(--sheet); }
@@ -127,68 +125,105 @@ section + section { margin-top: 32px; }
 .refresh { padding: 7px 11px; border-radius: 6px; white-space: nowrap; }
 .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
+/* must-read stories: the full width of the page, three per row */
+.must { margin-bottom: 32px; }
+.must-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.must-card { display: flex; flex-direction: column; gap: 4px; background: var(--sheet); border: 1px solid var(--line); border-top: 3px solid var(--signal); border-radius: 8px; padding: 14px 15px; min-width: 0; }
+.must-card .acts { margin-top: auto; padding-top: 10px; }
+@media (max-width: 880px) { .must-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .must-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* agenda: today and tomorrow side by side, grouped by theme, with a date search above */
+.agenda-search { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 15px; margin-bottom: 24px; }
+.agenda-fields { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.agenda-fields label { display: grid; gap: 4px; font-size: 14.3px; color: var(--muted); }
+.agenda-fields input { padding: 6px 9px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); }
+.agenda-table-wrap { overflow-x: auto; margin-top: 14px; }
+.agenda-table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 15px; }
+.agenda-table th { text-align: left; font-size: 13.2px; color: var(--muted); padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); }
+.agenda-table td { padding: 8px 10px 8px 0; vertical-align: top; border-bottom: 1px solid var(--line); }
+.agenda-table .nowrap { white-space: nowrap; }
+.agenda-days { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; margin-bottom: 24px; }
+.agenda-day { background: var(--sheet); border: 1px solid var(--line); border-top: 3px solid var(--signal); border-radius: 8px; padding: 14px 15px; min-width: 0; }
+.agenda-day h2 { margin: 0 0 2px; font: 700 22px/1.2 var(--display); }
+.agenda-day .when-long { color: var(--muted); font-size: 14.3px; }
+.theme-group { margin-top: 15px; }
+.theme-name { display: flex; justify-content: space-between; gap: 8px; padding: 4px 8px; border-radius: 4px; background: var(--accent); color: var(--sheet); font: 700 15.4px var(--display); cursor: pointer; list-style: none; }
+.theme-name::-webkit-details-marker { display: none; }
+.theme-name .label::before { content: "▸"; display: inline-block; width: 1em; }
+.theme-group[open] .theme-name { margin-bottom: 7px; }
+.theme-group[open] .theme-name .label::before { content: "▾"; }
+.theme-tag { display: inline-block; padding: 1px 7px; border-radius: 4px; background: var(--accent); color: var(--sheet); font-weight: 700; font-size: 13.2px; white-space: nowrap; }
+.agenda-item { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 2px 8px; padding: 5px 0; }
+.agenda-item + .agenda-item { border-top: 1px solid var(--line); }
+.agenda-item .clock { color: var(--muted); font-size: 14.3px; line-height: 1.5; }
+.agenda-item a { font-weight: 500; text-decoration: none; overflow-wrap: anywhere; }
+.agenda-item a:hover { color: var(--accent); text-decoration: underline; }
+.agenda-item small { display: block; color: var(--muted); font-size: 13.8px; }
+@media (max-width: 760px) { .agenda-days { grid-template-columns: minmax(0, 1fr); } }
+
 /* coverage meter: one tick per outlet, Dutch and international split */
 .cover { display: flex; gap: 2px; align-items: center; margin-top: 11px; flex-wrap: wrap; }
 .tick { width: 14px; height: 9px; border-radius: 2px; background: var(--line); }
 .tick.on { background: var(--signal); }
 .tick.sep { margin-left: 7px; }
-.cover span.lbl { margin-left: 9px; font: 400 12px var(--mono); color: var(--muted); }
+.cover span.lbl { margin-left: 9px; font: 400 13.2px var(--mono); color: var(--muted); }
 
 /* outlets */
 .outlets { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
 .outlet { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 13px 15px; display: flex; flex-direction: column; gap: 11px; }
-.outlet h3 { margin: 0; font: 500 12px var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.outlet h3 { margin: 0; font: 500 13.2px var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
 .story { display: grid; gap: 4px; }
-.story a { font: 500 14.5px/1.3 var(--body); text-decoration: none; overflow-wrap: anywhere; }
+.story a { font: 500 16px/1.3 var(--body); text-decoration: none; overflow-wrap: anywhere; }
 .story a:hover { color: var(--accent); text-decoration: underline; }
 .story .acts { margin-top: 2px; align-items: center; }
 
 /* side rail */
 .card { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 15px; }
-.wek a { font: 700 16px/1.25 var(--display); text-decoration: none; }
+.wek a { font: 700 17.6px/1.25 var(--display); text-decoration: none; }
 .wek a:hover { color: var(--accent); }
 .terms { display: flex; flex-wrap: wrap; gap: 5px; }
-.term { border: 1px solid var(--line); background: var(--sheet); border-radius: 4px; padding: 2px 7px; font: 400 12.5px var(--mono); cursor: pointer; }
+.term { border: 1px solid var(--line); background: var(--sheet); border-radius: 4px; padding: 2px 7px; font: 400 13.8px var(--mono); cursor: pointer; }
 .term:hover { border-color: var(--accent); }
 .term[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--sheet); }
 .term i { font-style: normal; opacity: .65; margin-left: 3px; }
 .list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 .list a { text-decoration: none; font-weight: 500; }
 .list a:hover { color: var(--accent); text-decoration: underline; }
-.list small { display: block; color: var(--muted); font-size: 12.5px; }
-.note { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
+.list small { display: block; color: var(--muted); font-size: 13.8px; }
+.note { font-size: 13.8px; color: var(--muted); margin: 10px 0 0; }
 
 /* research filters and source table */
 .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-bottom: 13px; }
-.switch { display: flex; align-items: center; gap: 7px; margin-bottom: 14px; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+.switch { display: flex; align-items: center; gap: 7px; margin-bottom: 14px; font-size: 14.9px; color: var(--muted); cursor: pointer; }
 .switch input { accent-color: var(--accent); }
-.day { padding: 8px 16px; background: var(--paper); font: 500 12px var(--mono); color: var(--muted); border-top: 1px solid var(--line); }
+.day { padding: 8px 16px; background: var(--paper); font: 500 13.2px var(--mono); color: var(--muted); border-top: 1px solid var(--line); }
 .day:first-child { border-top: 0; border-radius: 8px 8px 0 0; }
 .day + .row { border-top: 1px solid var(--line); }
-.src-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.src-table { width: 100%; border-collapse: collapse; font-size: 14.3px; }
 .src-table caption { text-align: left; }
-.src-table th { text-align: left; font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 10px 0 4px; }
+.src-table th { text-align: left; font: 500 12.1px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 10px 0 4px; }
 .src-table td { padding: 3px 0; vertical-align: top; }
-.src-table td:last-child { text-align: right; white-space: nowrap; font: 400 12px var(--mono); color: var(--muted); }
+.src-table td:last-child { text-align: right; white-space: nowrap; font: 400 13.2px var(--mono); color: var(--muted); }
 .src-table .bad { color: var(--signal); }
 
 /* shortlist */
 .pitch { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 10px; }
 .pitches { display: grid; gap: 12px; }
 .pitch-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; }
-.pitch label { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
+.pitch label { font-size: 13.8px; color: var(--muted); display: grid; gap: 4px; }
 .pitch textarea { width: 100%; min-height: 76px; padding: 8px 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; resize: vertical; color: var(--ink); }
 .pitch select { padding: 3px 6px; background: var(--paper); border: 1px solid var(--line); border-radius: 5px; }
 .empty { background: var(--sheet); border: 1px dashed var(--line); border-radius: 8px; padding: 26px 20px; }
-.empty h2 { margin: 0 0 6px; font: 700 20px var(--display); }
+.empty h2 { margin: 0 0 6px; font: 700 22px var(--display); }
 .empty p { margin: 0; color: var(--muted); max-width: 55ch; }
-.copybox { width: 100%; min-height: 160px; margin-top: 12px; padding: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; font: 400 13px var(--mono); }
+.copybox { width: 100%; min-height: 160px; margin-top: 12px; padding: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; font: 400 14.3px var(--mono); }
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 6;
-  background: var(--ink); color: var(--paper); padding: 7px 14px; border-radius: 6px; font-size: 13.5px;
+  background: var(--ink); color: var(--paper); padding: 7px 14px; border-radius: 6px; font-size: 14.9px;
 }
-.foot { padding-block: 0 40px; color: var(--muted); font-size: 12.5px; max-width: 80ch; }
+.foot { padding-block: 0 40px; color: var(--muted); font-size: 13.8px; max-width: 80ch; }
 
 @media (max-width: 880px) {
   .grid { grid-template-columns: minmax(0, 1fr); }
@@ -201,11 +236,12 @@ section + section { margin-top: 32px; }
 </style>
 
 <header class="bar"><div class="wrap bar-in">
-  <div class="brand"><span class="lamp" aria-hidden="true"></span>Vroege Dienst</div>
+  <div class="brand"><span class="lamp" aria-hidden="true"></span>Sjoernalistieke Bot</div>
   <div class="tabs" role="tablist" aria-label="Onderdelen">
     <button class="tab" role="tab" id="tab-news" data-view="news">Actualiteit</button>
     <button class="tab" role="tab" id="tab-research" data-view="research">Onderzoek</button>
     <button class="tab" role="tab" id="tab-science" data-view="science">Wetenschap</button>
+    <button class="tab" role="tab" id="tab-agenda" data-view="agenda">Agenda</button>
     <button class="tab" role="tab" id="tab-ideas" data-view="ideas">Mijn voorzetten<span class="n" id="idea-count"></span></button>
   </div>
   <div class="search"><input id="q" type="search" placeholder="Zoek in koppen en bronnen" aria-label="Zoek in koppen en bronnen"></div>
@@ -280,13 +316,14 @@ const isNew = (iso) => !!iso && new Date(iso).getTime() > newSince;
 const norm = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /* ---------- state ---------- */
-const VIEWS = ["news", "research", "science", "ideas"];
+const VIEWS = ["news", "research", "science", "agenda", "ideas"];
 let view = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "news";
 let query = "", term = null, region = null, showGeneral = false;
 const expanded = new Set();
 
 const OUTLETS = DATA.news.outlets, PLATFORMS = DATA.research.platforms, ITEMS = DATA.research.items;
 const SCIENCE = DATA.science || { items: [], scanned: 0, maxAgeDays: 2, sourcesTotal: 0, sourcesUsed: 0 };
+const AGENDA = DATA.agenda || { from: "", to: "", events: [], sources: [] };
 const FIRST_FOREIGN = OUTLETS.findIndex((o) => o.name.startsWith("The Guardian"));
 const matches = (...parts) => !query || parts.some((p) => norm(p).includes(query));
 
@@ -405,28 +442,30 @@ function coverage(members) {
     h("span", { class: "lbl" }, `${have.size} van ${OUTLETS.length} media`));
 }
 
+function notInDutchChip(entry) {
+  return entry.notInDutch && h("span", { class: "chip gap", title: "Automatische controle op Nederlandse koppen en Google News Nederland. Controleer dit zelf." }, "Mogelijk nog niet in NL");
+}
+
 function renderNews() {
   const stories = DATA.news.onmisbaar.filter((s) => !term && matches(s.title, ...s.members.map((m) => m.source + " " + m.title)));
-  const main = [];
-  if (!term && stories.length) {
-    main.push(h("section", null,
-      h("h2", { class: "eyebrow hot" }, "Onmisbaar"),
-      h("div", { class: "rundown" }, stories.map((s, i) => {
-        const inBnr = s.members.some((m) => m.source === "BNR");
-        const first = s.members[0];
-        return h("article", { class: "row" },
-          h("div", { class: "slug" }, String(s.members.length) + " media"),
-          h("div", null,
-            h("h3", { class: "head" }, s.title),
-            coverage(s.members),
-            h("div", { class: "meta" },
-              h("span", { class: "chip" + (inBnr ? " ok" : "") }, inBnr ? "Staat bij BNR" : "Niet in BNR-koppen"),
-              s.members.map((m) => ext(m.link, m.source))),
-            h("div", { class: "acts" }, saveButton({ link: first.link, title: s.title, source: first.source }))));
-      }))));
-  }
+  const must = !term && stories.length > 0 && h("section", { class: "must" },
+    h("h2", { class: "eyebrow hot" }, "Onmisbaar"),
+    h("div", { class: "must-grid" }, stories.map((s) => {
+      const inBnr = s.members.some((m) => m.source === "BNR");
+      const first = s.members[0];
+      return h("article", { class: "must-card" },
+        h("div", { class: "slug" }, String(s.members.length) + " media"),
+        h("h3", { class: "head" }, s.title),
+        coverage(s.members),
+        h("div", { class: "meta" },
+          h("span", { class: "chip" + (inBnr ? " ok" : "") }, inBnr ? "Staat bij BNR" : "Niet in BNR-koppen"),
+          notInDutchChip(s),
+          s.members.map((m) => ext(m.link, m.source))),
+        h("div", { class: "acts" }, saveButton({ link: first.link, title: s.title, source: first.source })));
+    })));
 
-  const cards = OUTLETS.map((o) => {
+  const main = [];
+  const cards =OUTLETS.map((o) => {
     let list = o.articles;
     if (term) list = list.filter((a) => a.terms.includes(term));
     list = list.filter((a) => matches(a.title, a.snippet, o.name));
@@ -438,6 +477,7 @@ function renderNews() {
     cards.length ? h("div", { class: "outlets" }, cards.map(({ o, list }) => {
       const open = expanded.has(o.name) || term || query;
       const shown = open ? list : list.slice(0, 3);
+      const canCollapse = expanded.has(o.name) && !term && !query && list.length > 3;
       return h("article", { class: "outlet" },
         h("h3", null, h("span", null, o.name), !o.ok && h("span", { class: "chip hot" }, "niet bereikt")),
         !o.ok && h("p", { class: "snip" }, "Deze bron gaf geen koppen terug."),
@@ -445,8 +485,10 @@ function renderNews() {
           ext(a.link, a.title),
           h("div", { class: "acts" },
             a.published && h("span", { class: "mono chip" + (isNew(a.published) ? " new" : "") }, shortTime(a.published)),
+            notInDutchChip(a),
             saveButton({ ...a, source: o.name })))),
-        !open && list.length > 3 && h("button", { class: "act quiet", type: "button", onclick: () => { expanded.add(o.name); renderView(); } }, `Toon ${list.length - 3} meer`));
+        !open && list.length > 3 && h("button", { class: "act quiet", type: "button", onclick: () => { expanded.add(o.name); renderView(); } }, `Toon ${list.length - 3} meer`),
+        canCollapse && h("button", { class: "act quiet", type: "button", onclick: () => { expanded.delete(o.name); renderView(); } }, `Toon ${list.length - 3} minder`));
     })) : h("p", { class: "snip" }, "Niets gevonden. Pas je zoekopdracht aan."),
   ));
 
@@ -462,7 +504,7 @@ function renderNews() {
     DATA.news.opinion.length && h("section", null, h("h2", { class: "eyebrow" }, "Opinie"),
       h("ul", { class: "list" }, DATA.news.opinion.map((a) => h("li", null, ext(a.link, a.title), h("small", null, a.source))))),
   ];
-  return h("div", { class: "grid" }, h("div", null, main), h("aside", { class: "rail" }, rail));
+  return h("div", null, must, h("div", { class: "grid" }, h("div", null, main), h("aside", { class: "rail" }, rail)));
 }
 
 function renderResearch() {
@@ -572,6 +614,80 @@ function renderScience() {
           h("p", { class: "note" }, "Een rode streep betekent dat het verhaal of een woord uit de kop vaker voorkomt in de bronnen van de laatste 5 dagen. Ook dit is een woordvergelijking, en Nederlandse en Engelse koppen worden meestal niet aan elkaar gekoppeld.")))));
 }
 
+/* ---------- agenda ---------- */
+const isoDay = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+const noonOf = (day) => new Date(day + "T12:00:00Z");
+const longDay = (day) => fmt({ weekday: "long", day: "numeric", month: "long" }).format(noonOf(day));
+const shortDay = (day) => fmt({ weekday: "short", day: "numeric", month: "short", year: "numeric" }).format(noonOf(day));
+const eventMatches = (e) => matches(e.title, e.detail, e.source, e.theme);
+let agendaFrom = "", agendaTo = "";
+/* These themes are rarely needed: they start closed and sit at the bottom of a day, in this order. */
+const THEMES_AT_BOTTOM = ["Themadag", "Economie en geld"];
+const THEMES_CLOSED_FIRST = new Set(["Economie en geld"]);
+const THEME_STATE_KEY = "vd.agendaThemes";
+let themeState = store.get(THEME_STATE_KEY, {});
+if (!themeState || typeof themeState !== "object") themeState = {};
+const themeIsOpen = (theme) => theme in themeState ? !!themeState[theme] : !THEMES_CLOSED_FIRST.has(theme);
+
+function agendaColumn(label, day) {
+  const events = AGENDA.events.filter((e) => e.date === day && eventMatches(e));
+  const countOf = (theme) => events.filter((e) => e.theme === theme).length;
+  const themes = [...new Set(events.map((e) => e.theme))].sort((a, b) =>
+    THEMES_AT_BOTTOM.indexOf(a) - THEMES_AT_BOTTOM.indexOf(b) || countOf(b) - countOf(a) || a.localeCompare(b, "nl"));
+  return h("section", { class: "agenda-day" },
+    h("h2", null, label),
+    h("div", { class: "when-long" }, longDay(day)),
+    themes.length ? themes.map((theme) => {
+      const inTheme = events.filter((e) => e.theme === theme);
+      return h("details", { class: "theme-group", open: themeIsOpen(theme),
+          ontoggle: (ev) => { if (themeIsOpen(theme) !== ev.target.open) { themeState[theme] = ev.target.open; store.set(THEME_STATE_KEY, themeState); } } },
+        h("summary", { class: "theme-name" }, h("span", { class: "label" }, theme), h("span", null, inTheme.length)),
+        inTheme.map((e) => h("div", { class: "agenda-item" },
+          h("span", { class: "clock" }, e.time || "–"),
+          h("div", null, ext(e.link, e.title), h("small", null, [e.source, e.detail].filter(Boolean).join(" · "))))));
+    }) : h("p", { class: "snip" }, "Geen agendapunten gevonden."));
+}
+
+function agendaResults() {
+  if (!agendaFrom) return [h("p", { class: "note" }, "Kies een dag, of een begin- en einddatum voor een hele periode.")];
+  const [first, last] = [agendaFrom, agendaTo || agendaFrom].sort();
+  const found = AGENDA.events.filter((e) => e.date >= first && e.date <= last && eventMatches(e));
+  const outside = first < AGENDA.from || last > AGENDA.to;
+  return [
+    h("p", { class: "note" }, `${found.length} ${found.length === 1 ? "agendapunt" : "agendapunten"} gevonden.`),
+    outside && h("p", { class: "note" }, `Let op: de agenda bevat alleen ${shortDay(AGENDA.from)} t/m ${shortDay(AGENDA.to)}. Buiten die periode is niets te vinden.`),
+    found.length > 0 && h("div", { class: "agenda-table-wrap" }, h("table", { class: "agenda-table" },
+      h("thead", null, h("tr", null, ["Datum", "Tijd", "Thema", "Wat", "Bron"].map((c) => h("th", { scope: "col" }, c)))),
+      h("tbody", null, found.map((e) => h("tr", null,
+        h("td", { class: "nowrap" }, shortDay(e.date)),
+        h("td", { class: "nowrap" }, e.time || "–"),
+        h("td", null, h("span", { class: "theme-tag" }, e.theme)),
+        h("td", null, ext(e.link, e.title), e.detail && h("small", { style: "display:block;color:var(--muted)" }, e.detail)),
+        h("td", { class: "nowrap" }, e.source)))))),
+  ].filter(Boolean);
+}
+
+function renderAgenda() {
+  const today = isoDay(new Date());
+  const tomorrow = isoDay(new Date(noonOf(today).getTime() + 86400000));
+  const results = h("div", { id: "agenda-results" }, agendaResults());
+  const refreshResults = () => results.replaceChildren(...agendaResults());
+  const dateField = (id, label, value, set) => h("label", { for: id }, label,
+    h("input", { id, type: "date", value, min: AGENDA.from, max: AGENDA.to, onchange: (e) => { set(e.target.value); refreshResults(); } }));
+  const failed = AGENDA.sources.filter((s) => !s.ok).map((s) => s.name);
+  return h("div", { style: "padding-bottom:56px" },
+    h("section", { class: "agenda-search" },
+      h("h2", { class: "eyebrow" }, "Zoek op datum"),
+      h("div", { class: "agenda-fields" },
+        dateField("agenda-from", "Van", agendaFrom, (v) => { agendaFrom = v; }),
+        dateField("agenda-to", "Tot en met (mag leeg)", agendaTo, (v) => { agendaTo = v; })),
+      results),
+    h("div", { class: "agenda-days" }, agendaColumn("Vandaag", today), agendaColumn("Morgen", tomorrow)),
+    h("p", { class: "note" }, "Bronnen: " + AGENDA.sources.map((s) => s.ok ? `${s.name} (${s.count})` : `${s.name} (niet bereikt)`).join(", ") + ". Het thema is automatisch toegekend op basis van woorden en kan afwijken. Controleer tijden bij de bron."),
+    failed.length > 0 && h("p", { class: "stale" }, "Deze bronnen ontbreken nu: " + failed.join(", ") + "."),
+    h("p", { class: "note" }, "Bedrijfscijfers, zaken bij Nederlandse rechtbanken en persconferenties staan hier nog niet in."));
+}
+
 function renderIdeas() {
   if (!ideas.length) {
     return h("div", { class: "empty" },
@@ -610,7 +726,7 @@ function renderIdeas() {
 
 function renderView() {
   for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", t.dataset.view === view ? "true" : "false");
-  const content = view === "news" ? renderNews() : view === "research" ? renderResearch() : view === "science" ? renderScience() : renderIdeas();
+  const content = view === "news" ? renderNews() : view === "research" ? renderResearch() : view === "science" ? renderScience() : view === "agenda" ? renderAgenda() : renderIdeas();
   document.getElementById("view").replaceChildren(content);
 }
 
