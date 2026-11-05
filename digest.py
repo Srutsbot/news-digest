@@ -244,7 +244,7 @@ def scrape_bnr(name: str, url: str) -> list[dict]:
         if len(title) < 15:  # image-only links and labels
             continue
         seen.add(link)
-        articles.append({"title": title, "link": link, "snippet": ""})
+        articles.append({"title": title, "link": link, "snippet": "", "published": None})
         if len(articles) >= CANDIDATES_PER_SOURCE:
             break
 
